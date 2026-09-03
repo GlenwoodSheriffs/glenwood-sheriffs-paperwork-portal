@@ -20,13 +20,14 @@ const STORAGE = {
   calls: 'gsd_dispatch_calls_v1',
   bolos: 'gsd_bolo_records_v1',
   activity: 'gsd_activity_log_v1',
+  arrestDraft: 'gsd_arrest_report_draft_v1',
 };
 
 const FORM_LABELS = {
-  date: 'Date', location: 'Location', incidentDescription: 'Description of Incident',
-  suspectDescription: 'Suspect Description',
-  reporterName: 'Reporting Deputy / Name', incidentType: 'Incident Type', priority: 'Priority',
-  evidence: 'Evidence & Related Information',
+  caseNumber: 'Case Number', date: 'Date', arrestingOfficer: 'Arresting Officer', badgeNumber: 'Badge Number',
+  department: 'Department', arresteeName: 'Arrestee’s Name', gamertag: 'Arrestee’s Gamertag',
+  gangAffiliation: 'Gang Affiliation', charges: 'Criminal Charges', jailSentence: 'Jail Sentence', fine: 'Fine',
+  incidentSummary: 'Incident Summary', reportStatus: 'Report Status',
 };
 
 const page = document.body.dataset.page;
@@ -144,8 +145,7 @@ function initPublicPage() {
   const portalUsername = document.querySelector('#portal-username');
   if (portalUsername) portalUsername.textContent = profile.username;
   startClock('#portal-clock');
-  const dateField = document.querySelector('#incident-form input[name="date"]');
-  if (dateField && !dateField.value) dateField.value = new Date().toISOString().slice(0, 10);
+  prepareArrestForm();
   const toggle = document.querySelector('.mobile-toggle');
   const nav = document.querySelector('.main-nav');
   toggle?.addEventListener('click', () => {
@@ -171,6 +171,75 @@ function initPublicPage() {
   updateServerStatus();
 }
 
+function generateCaseNumber() {
+  const now = new Date();
+  const dateCode = `${now.getMonth() + 1}${String(now.getDate()).padStart(2, '0')}${String(now.getFullYear()).slice(-2)}`;
+  const sequence = String(Math.floor(100 + Math.random() * 900));
+  return `GSD-${dateCode}-${sequence}`;
+}
+
+function chargeRow(charge = '', count = 1) {
+  return `<div class="charge-row"><label><span>Charge *</span><input name="charge" required maxlength="160" value="${escapeHtml(charge)}" placeholder="Attempted Murder of a Law Enforcement Officer"></label><label><span>Counts</span><input name="count" type="number" min="1" max="99" value="${Number(count) || 1}" required></label><button type="button" class="remove-charge" aria-label="Remove charge">×</button></div>`;
+}
+
+function collectArrestFields(form) {
+  const fields = Object.fromEntries(new FormData(form).entries());
+  fields.caseNumber = form.querySelector('[name="caseNumber"]').value;
+  fields.charges = [...form.querySelectorAll('.charge-row')].map((row) => ({
+    charge: row.querySelector('[name="charge"]').value.trim(),
+    count: Number(row.querySelector('[name="count"]').value || 1),
+  })).filter((item) => item.charge);
+  delete fields.charge;
+  delete fields.count;
+  return fields;
+}
+
+function resetArrestForm(form, keepMessage = true) {
+  form.reset();
+  const caseNumber = generateCaseNumber();
+  form.querySelector('[name="caseNumber"]').value = caseNumber;
+  setText('#case-number-preview', caseNumber);
+  form.querySelector('[name="date"]').value = new Date().toISOString().slice(0, 10);
+  document.querySelector('#charge-builder').innerHTML = chargeRow();
+  setText('#summary-count', '0');
+  if (!keepMessage) form.querySelector('.form-message').textContent = '';
+}
+
+function prepareArrestForm() {
+  const form = document.querySelector('#incident-form');
+  if (!form) return;
+  let draft = null;
+  try { draft = JSON.parse(localStorage.getItem(STORAGE.arrestDraft) || 'null'); } catch { draft = null; }
+  if (draft?.fields) {
+    Object.entries(draft.fields).forEach(([name, value]) => {
+      if (name === 'charges') return;
+      const input = form.elements.namedItem(name);
+      if (input && typeof value === 'string') input.value = value;
+    });
+    form.querySelector('[name="caseNumber"]').value = draft.fields.caseNumber || generateCaseNumber();
+    document.querySelector('#charge-builder').innerHTML = (draft.fields.charges?.length ? draft.fields.charges : [{ charge: '', count: 1 }]).map((item) => chargeRow(item.charge, item.count)).join('');
+  } else resetArrestForm(form);
+  setText('#case-number-preview', form.querySelector('[name="caseNumber"]').value);
+  setText('#summary-count', form.querySelector('[name="incidentSummary"]').value.length);
+  document.querySelector('#add-charge')?.addEventListener('click', () => {
+    document.querySelector('#charge-builder').insertAdjacentHTML('beforeend', chargeRow());
+    document.querySelector('#charge-builder .charge-row:last-child input').focus();
+  });
+  document.querySelector('#charge-builder')?.addEventListener('click', (event) => {
+    const remove = event.target.closest('.remove-charge');
+    if (!remove) return;
+    const rows = document.querySelectorAll('.charge-row');
+    if (rows.length === 1) return showToast('An arrest report needs at least one charge', 'warning');
+    remove.closest('.charge-row').remove();
+  });
+  let draftTimer;
+  form.addEventListener('input', () => {
+    setText('#summary-count', form.querySelector('[name="incidentSummary"]').value.length);
+    clearTimeout(draftTimer);
+    draftTimer = setTimeout(() => localStorage.setItem(STORAGE.arrestDraft, JSON.stringify({ fields: collectArrestFields(form), savedAt: new Date().toISOString() })), 350);
+  });
+}
+
 async function submitPublicForm(event) {
   event.preventDefault();
   const form = event.currentTarget;
@@ -183,9 +252,9 @@ async function submitPublicForm(event) {
   }
 
   const type = form.dataset.submissionType;
-  const fields = Object.fromEntries(new FormData(form).entries());
+  const fields = collectArrestFields(form);
   const record = {
-    id: makeId('CIR'), type, fields, status: 'pending',
+    id: fields.caseNumber, type, fields, status: 'pending',
     submittedAt: new Date().toISOString(), reviewedAt: null, reviewedBy: null,
   };
   const records = readSubmissions();
@@ -207,11 +276,12 @@ async function submitPublicForm(event) {
       showToast('Paperwork saved to this browser');
     } else {
       await sendToDiscord(record, webhookUrl);
-      message.textContent = 'Submission received. A staff copy was delivered to Discord.';
+      message.textContent = `Arrest report ${record.id} filed. A staff copy was delivered to Discord.`;
       message.className = 'form-message success';
-      showToast('Paperwork submitted successfully');
+      showToast(`Arrest report ${record.id} filed`);
     }
-    form.reset();
+    localStorage.removeItem(STORAGE.arrestDraft);
+    resetArrestForm(form);
   } catch (error) {
     console.error('Discord webhook delivery failed:', error);
     message.textContent = 'Saved locally, but Discord delivery failed. Staff can still review it on this device.';
@@ -226,15 +296,15 @@ async function submitPublicForm(event) {
 async function sendToDiscord(record, webhookUrl) {
   const fields = Object.entries(record.fields).map(([name, value]) => ({
     name: FORM_LABELS[name] || name,
-    value: cleanDiscordValue(value),
-    inline: ['discordTag', 'age', 'inGameName', 'date', 'location'].includes(name),
+    value: cleanDiscordValue(name === 'charges' ? value.map((item) => `• ${item.charge}${item.count > 1 ? ` — ${item.count} Counts` : ''}`).join('\n') : value),
+    inline: ['caseNumber', 'date', 'arrestingOfficer', 'badgeNumber', 'arresteeName', 'gamertag', 'jailSentence', 'fine', 'reportStatus'].includes(name),
   }));
   const payload = {
     username: "Glenwood Sheriff's Department",
     allowed_mentions: { parse: [] },
     embeds: [{
-      title: 'New Sheriff Incident Report',
-      description: `Submission ID: **${record.id}**`,
+      title: 'New Glenwood Arrest Report',
+      description: `Case Number: **${record.id}**`,
       color: 2266879,
       fields,
       footer: { text: "Glenwood Sheriff's Department · Public Records" },
@@ -299,6 +369,7 @@ async function initDashboard() {
   document.querySelector('#submission-search')?.addEventListener('input', (event) => renderSubmissions(document.querySelector('.filter.active').dataset.filter, event.target.value));
   document.querySelector('#submission-list')?.addEventListener('click', handleSubmissionAction);
   document.querySelector('.dialog-close')?.addEventListener('click', () => document.querySelector('#submission-dialog').close());
+  document.querySelector('#submission-dialog')?.addEventListener('click', handleReportDialogAction);
   document.querySelector('#export-records')?.addEventListener('click', exportRecords);
   document.querySelector('#import-records')?.addEventListener('change', importRecords);
   document.querySelector('#clear-records')?.addEventListener('click', clearRecords);
@@ -430,9 +501,9 @@ function renderSubmissions(filter = 'all', query = '') {
 }
 
 function submissionCard(record) {
-  const title = 'Sheriff Incident Report';
-  const summary = record.fields.location;
-  return `<article class="submission-card"><span class="submission-type">!</span><div class="submission-copy"><strong>${escapeHtml(title)} · ${escapeHtml(record.id)}</strong><span>${escapeHtml(summary || 'No summary')} · ${new Date(record.submittedAt).toLocaleString()}</span></div><div class="submission-actions"><span class="status-tag ${record.status}">${record.status}</span><button class="small-action view" data-action="view" data-id="${record.id}">View</button><button class="small-action approve" data-action="approved" data-id="${record.id}">Approve</button><button class="small-action deny" data-action="denied" data-id="${record.id}">Deny</button></div></article>`;
+  const title = record.type === 'arrest' ? 'Arrest Report' : 'Sheriff Incident Report';
+  const summary = record.fields.arresteeName || record.fields.location;
+  return `<article class="submission-card"><span class="submission-type">${record.type === 'arrest' ? 'AR' : '!'}</span><div class="submission-copy"><strong>${escapeHtml(title)} · ${escapeHtml(record.id)}</strong><span>${escapeHtml(summary || 'No summary')} · ${new Date(record.submittedAt).toLocaleString()}</span></div><div class="submission-actions"><span class="status-tag ${record.status}">${record.status}</span><button class="small-action view" data-action="view" data-id="${record.id}">View</button><button class="small-action approve" data-action="approved" data-id="${record.id}">Approve</button><button class="small-action deny" data-action="denied" data-id="${record.id}">Deny</button></div></article>`;
 }
 
 function handleSubmissionAction(event) {
@@ -455,9 +526,39 @@ function handleSubmissionAction(event) {
 function openSubmission(id) {
   const record = readSubmissions().find((item) => item.id === id);
   if (!record) return;
-  const title = 'Sheriff Incident Report';
-  document.querySelector('#dialog-content').innerHTML = `<div class="dialog-title"><p class="eyebrow">${escapeHtml(record.id)}</p><h2>${title}</h2><p>Submitted ${new Date(record.submittedAt).toLocaleString()} · Status: ${escapeHtml(record.status)}</p></div><div class="dialog-fields">${Object.entries(record.fields).map(([key, value]) => `<div class="dialog-field ${String(value).length > 80 ? 'wide' : ''}"><span>${escapeHtml(FORM_LABELS[key] || key)}</span><p>${escapeHtml(value)}</p></div>`).join('')}</div>`;
+  if (record.type === 'arrest') {
+    const f = record.fields;
+    const charges = Array.isArray(f.charges) ? f.charges : [];
+    document.querySelector('#dialog-content').innerHTML = `<article class="official-report" data-report-id="${escapeHtml(record.id)}"><header><img src="assets/crest.png" alt=""><div><small>GLENWOOD SHERIFF’S DEPARTMENT</small><h2>ARREST REPORT</h2></div><span class="report-review-state ${record.status}">${escapeHtml(record.status)}</span></header><div class="report-id-grid"><p><span>CASE NUMBER</span><b>${escapeHtml(record.id)}</b></p><p><span>DATE</span><b>${escapeHtml(formatReportDate(f.date))}</b></p><p><span>ARRESTING OFFICER</span><b>${escapeHtml(f.arrestingOfficer)}</b></p></div>${reportSection('SUSPECT INFORMATION', [['Arrestee’s Name', f.arresteeName], ['Arrestee’s Gamertag', f.gamertag], ['Gang Affiliation', f.gangAffiliation || 'None known']])}<section class="report-section"><h3>CRIMINAL CHARGES</h3><ul class="charge-list">${charges.map((item) => `<li>${escapeHtml(item.charge)}${Number(item.count) > 1 ? ` <b>— ${Number(item.count)} Counts</b>` : ''}</li>`).join('')}</ul></section>${reportSection('SENTENCING', [['Jail Sentence', `${f.jailSentence} Minutes`], ['Fine', f.fine]])}<section class="report-section report-summary"><h3>INCIDENT SUMMARY</h3><p>${escapeHtml(f.incidentSummary)}</p></section>${reportSection('OFFICER INFORMATION', [['Arresting Officer', f.arrestingOfficer], ['Badge Number', f.badgeNumber], ['Department', f.department]])}<footer><span>REPORT STATUS</span><b>${escapeHtml(f.reportStatus)}</b></footer></article><div class="report-actions"><button class="button ghost" type="button" data-report-action="copy" data-id="${escapeHtml(record.id)}">Copy report text</button><button class="button gold" type="button" data-report-action="print">Print report</button></div>`;
+  } else {
+    document.querySelector('#dialog-content').innerHTML = `<div class="dialog-title"><p class="eyebrow">${escapeHtml(record.id)}</p><h2>Sheriff Incident Report</h2><p>Submitted ${new Date(record.submittedAt).toLocaleString()} · Status: ${escapeHtml(record.status)}</p></div><div class="dialog-fields">${Object.entries(record.fields).map(([key, value]) => `<div class="dialog-field ${String(value).length > 80 ? 'wide' : ''}"><span>${escapeHtml(FORM_LABELS[key] || key)}</span><p>${escapeHtml(value)}</p></div>`).join('')}</div>`;
+  }
   document.querySelector('#submission-dialog').showModal();
+}
+
+function reportSection(title, rows) {
+  return `<section class="report-section"><h3>${title}</h3><div class="report-detail-grid">${rows.map(([label, value]) => `<p><span>${escapeHtml(label)}</span><b>${escapeHtml(value || 'Not provided')}</b></p>`).join('')}</div></section>`;
+}
+
+function formatReportDate(value) {
+  if (!value) return 'Not provided';
+  return new Date(`${value}T12:00:00`).toLocaleDateString('en-US');
+}
+
+function reportAsText(record) {
+  const f = record.fields;
+  const charges = (f.charges || []).map((item) => `- ${item.charge}${Number(item.count) > 1 ? ` — ${item.count} Counts` : ''}`).join('\n');
+  return `GLENWOOD SHERIFF’S DEPARTMENT\n\nARREST REPORT\n\nCase Number: ${record.id}\nDate: ${formatReportDate(f.date)}\nArresting Officer: ${f.arrestingOfficer}\n\nSUSPECT INFORMATION\n\nArrestee’s Name: ${f.arresteeName}\nArrestee’s Gamertag: ${f.gamertag}\nGang Affiliation: ${f.gangAffiliation || 'None known'}\n\nCRIMINAL CHARGES\n\n${charges}\n\nSENTENCING\n\nJail Sentence: ${f.jailSentence} Minutes\nFine: ${f.fine}\n\nINCIDENT SUMMARY\n\n${f.incidentSummary}\n\nOFFICER INFORMATION\n\nArresting Officer: ${f.arrestingOfficer}\nBadge Number: ${f.badgeNumber}\nDepartment: ${f.department}\n\nReport Status: ${f.reportStatus}`;
+}
+
+async function handleReportDialogAction(event) {
+  const button = event.target.closest('[data-report-action]');
+  if (!button) return;
+  if (button.dataset.reportAction === 'print') return window.print();
+  const record = readSubmissions().find((item) => item.id === button.dataset.id);
+  if (!record) return;
+  try { await navigator.clipboard.writeText(reportAsText(record)); showToast('Arrest report copied'); }
+  catch { showToast('Could not access the clipboard', 'warning'); }
 }
 
 function exportRecords() {
@@ -477,7 +578,7 @@ async function importRecords(event) {
   try {
     const backup = JSON.parse(await file.text());
     if (!Array.isArray(backup.submissions)) throw new Error('Invalid backup');
-    writeSubmissions(backup.submissions.filter((record) => record?.id && record.type === 'incident'));
+    writeSubmissions(backup.submissions.filter((record) => record?.id && ['incident', 'arrest'].includes(record.type)));
     updateMetrics();
     showToast('Records backup imported');
   } catch {
@@ -584,7 +685,7 @@ function registerWebMCP() {
   if (!context?.registerTool) return;
   context.registerTool({
     name: 'list_public_submissions', title: 'List public submissions',
-    description: 'List locally cached Glenwood sheriff incident reports.',
+    description: 'List locally cached Glenwood sheriff arrest and incident reports.',
     inputSchema: { type: 'object', properties: { status: { type: 'string', enum: ['all', 'pending', 'approved', 'denied'] } }, additionalProperties: false },
     annotations: { readOnlyHint: true, untrustedContentHint: true },
     execute: ({ status = 'all' }) => {

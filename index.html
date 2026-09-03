@@ -11,8 +11,8 @@
   <meta name="twitter:card" content="summary_large_image">
   <title>Glenwood Sheriff's Department | Arma Reforger RP</title>
   <link rel="icon" href="assets/crest.png">
-  <link rel="stylesheet" href="style.css?v=11">
-  <script src="script.js?v=11" defer></script>
+  <link rel="stylesheet" href="style.css?v=12">
+  <script src="script.js?v=12" defer></script>
 </head>
 <body data-page="public" class="auth-pending">
   <section class="site-login-gate" id="site-login-gate" aria-labelledby="site-login-title">
@@ -37,7 +37,7 @@
     </a>
     <button class="mobile-toggle" type="button" aria-label="Open navigation" aria-expanded="false">☰</button>
     <nav class="main-nav" aria-label="Main navigation">
-      <a href="#department">Department</a><a href="#roster">Roster</a><a href="#records">Incident Reports</a><a href="#status">Server Status</a>
+      <a href="#department">Department</a><a href="#roster">Roster</a><a href="#records">Arrest Reports</a><a href="#status">Server Status</a>
     </nav>
     <div class="session-chip"><img id="portal-avatar" src="assets/crest.png" alt=""><span><small>SECURE SESSION</small><b id="portal-username">Authorized</b></span></div>
     <button class="discord-button staff-login" type="button"><span>▣</span> Open MDT</button>
@@ -51,7 +51,7 @@
         <p class="eyebrow">ARMA REFORGER ROLEPLAY · LAW ENFORCEMENT</p>
         <h1 id="hero-title">Honor in service.<br><span>Strength in community.</span></h1>
         <p class="hero-lede">Serving the citizens of Glenwood through professionalism, integrity, and realistic law-enforcement roleplay.</p>
-        <div class="hero-actions"><a class="button gold" href="#records">File incident report</a><a class="button ghost" href="dashboard.html">Enter command center</a></div>
+        <div class="hero-actions"><a class="button gold" href="#records">File arrest report</a><a class="button ghost" href="dashboard.html">Enter command center</a></div>
         <div class="unit-strip"><span>01</span><p><b>Professional RP</b><small>Structured patrol and investigations</small></p><span>02</span><p><b>Active Command</b><small>Training, leadership, and support</small></p></div>
       </div>
       <div class="hero-visual reveal delay-1">
@@ -65,7 +65,7 @@
     <section class="quick-ops section-shell" aria-labelledby="quick-ops-title">
       <div class="section-heading"><p class="eyebrow">AUTHORIZED QUICK ACCESS</p><h2 id="quick-ops-title">Department operations</h2></div>
       <div class="quick-ops-grid">
-        <a href="#records"><span>01</span><div><b>New Incident Report</b><small>File an official report for command review</small></div><i>→</i></a>
+        <a href="#records"><span>01</span><div><b>New Arrest Report</b><small>File an official report for command review</small></div><i>→</i></a>
         <a href="dashboard.html#dispatch"><span>02</span><div><b>Dispatch Board</b><small>Manage active calls and unit assignments</small></div><i>→</i></a>
         <a href="dashboard.html#bolo"><span>03</span><div><b>Active BOLOs</b><small>View and publish department alerts</small></div><i>→</i></a>
         <a href="dashboard.html"><span>04</span><div><b>Records Desk</b><small>Review, approve, and archive reports</small></div><i>→</i></a>
@@ -98,12 +98,17 @@
     </section>
 
     <section class="records section-shell" id="records">
-      <div class="records-intro"><p class="eyebrow">SECURE RECORDS & FILING</p><h2>File an incident report</h2><p>Document events clearly for command review. Reports are added to the MDT review desk and can be approved or denied by authorized staff.</p><div class="privacy-chip">◈ Authenticated department session</div></div>
+      <div class="records-intro"><p class="eyebrow">SECURE RECORDS & FILING</p><h2>Create an arrest report</h2><p>Complete the guided fields and the system will format a professional Glenwood arrest report for command review.</p><div class="case-preview"><small>AUTOMATIC CASE NUMBER</small><strong id="case-number-preview">GSD-LOADING</strong><span>Generated when this form opens</span></div><div class="privacy-chip">◈ Authenticated department session</div></div>
       <div class="filing-panel">
-        <form class="public-form active" id="incident-form" data-submission-type="incident" novalidate>
-          <div class="form-heading"><span>01</span><div><h3>Sheriff Incident Report</h3><p>Provide a clear factual account for department review.</p></div></div>
-          <div class="field-grid"><label><span>Reporting Deputy / Name</span><input name="reporterName" required maxlength="80" placeholder="Name or callsign"></label><label><span>Date</span><input name="date" type="date" required></label><label><span>Incident Type</span><select name="incidentType" required><option value="">Select classification</option><option>Traffic Stop</option><option>Arrest</option><option>Use of Force</option><option>Property Crime</option><option>Violent Crime</option><option>Medical / Welfare</option><option>Other</option></select></label><label><span>Priority</span><select name="priority" required><option value="Routine">Routine</option><option value="Elevated">Elevated</option><option value="Critical">Critical</option></select></label><label class="wide"><span>Location</span><input name="location" required maxlength="160" placeholder="Road, town, grid reference, or landmark"></label><label class="wide"><span>Description of Incident</span><textarea name="incidentDescription" required maxlength="3000" placeholder="Give a factual, chronological account: units involved, actions taken, and outcome."></textarea></label><label class="wide"><span>Subject / Suspect Description</span><textarea name="suspectDescription" required maxlength="1600" placeholder="Name if known, appearance, clothing, vehicle, direction of travel, or identifiers."></textarea></label><label class="wide"><span>Evidence & Related Information <em>optional</em></span><textarea name="evidence" maxlength="1200" placeholder="Evidence collected, witness names, related report IDs, or follow-up needed."></textarea></label></div>
-          <label class="consent"><input type="checkbox" required><span>I confirm this report is truthful to the best of my knowledge.</span></label><button class="button gold submit-button" type="submit">Submit incident report <b>→</b></button><output class="form-message" aria-live="polite"></output>
+        <form class="public-form active" id="incident-form" data-submission-type="arrest" novalidate>
+          <div class="form-heading"><span>AR</span><div><h3>Glenwood Arrest Report</h3><p>Fields marked with an asterisk are required.</p></div><b class="draft-state">AUTO-SAVES</b></div>
+          <input id="case-number" name="caseNumber" type="hidden">
+          <fieldset><legend>Case & Officer Information</legend><div class="field-grid"><label><span>Date *</span><input name="date" type="date" required></label><label><span>Arresting Officer *</span><input name="arrestingOfficer" required maxlength="80" placeholder="James Daniel"></label><label><span>Badge Number *</span><input name="badgeNumber" required maxlength="20" inputmode="numeric" placeholder="19010"></label><label><span>Department</span><input name="department" value="Glenwood Sheriff’s Department" readonly></label></div></fieldset>
+          <fieldset><legend>Suspect Information</legend><div class="field-grid"><label><span>Arrestee’s Name *</span><input name="arresteeName" required maxlength="100" placeholder="Full roleplay name"></label><label><span>Arrestee’s Gamertag *</span><input name="gamertag" required maxlength="80" placeholder="Xbox / platform name"></label><label class="wide"><span>Gang Affiliation <em>optional</em></span><input name="gangAffiliation" maxlength="100" placeholder="None known"></label></div></fieldset>
+          <fieldset><legend>Criminal Charges</legend><div class="charge-builder" id="charge-builder"><div class="charge-row"><label><span>Charge *</span><input name="charge" required maxlength="160" placeholder="Attempted Murder of a Law Enforcement Officer"></label><label><span>Counts</span><input name="count" type="number" min="1" max="99" value="1" required></label><button type="button" class="remove-charge" aria-label="Remove charge">×</button></div></div><button class="add-charge" id="add-charge" type="button">+ Add another charge</button></fieldset>
+          <fieldset><legend>Sentencing</legend><div class="field-grid"><label><span>Jail Sentence *</span><div class="input-suffix"><input name="jailSentence" type="number" min="0" max="999" required placeholder="45"><b>MINUTES</b></div></label><label><span>Fine *</span><input name="fine" required maxlength="50" placeholder="No Fine or $5,000"></label></div></fieldset>
+          <fieldset><legend>Incident Summary</legend><div class="field-grid"><label class="wide"><span>Summary *</span><textarea name="incidentSummary" required maxlength="3000" placeholder="Describe why the suspect was taken into custody, the events leading to the arrest, and the final disposition."></textarea><small class="field-hint"><b id="summary-count">0</b> / 3000 characters</small></label><label class="wide"><span>Report Status *</span><select name="reportStatus" required><option>CLOSED / SUSPECT PROCESSED</option><option>OPEN / PENDING INVESTIGATION</option><option>REFERRED TO COMMAND</option></select></label></div></fieldset>
+          <label class="consent"><input type="checkbox" required><span>I certify that this report is accurate and complete to the best of my knowledge.</span></label><button class="button gold submit-button" type="submit">File arrest report <b>→</b></button><output class="form-message" aria-live="polite"></output>
         </form>
       </div>
     </section>
