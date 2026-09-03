@@ -21,7 +21,7 @@ Open `script.js` and replace the clearly marked values at the top:
 In the Discord Developer Portal, add this exact OAuth2 redirect:
 
 ```text
-https://shadowrp-cad.github.io/glenwood-sheriffs-paperwork-portal/dashboard.html
+https://glenwoodsheriffs.github.io/glenwood-sheriffs-paperwork-portal/dashboard.html
 ```
 
 The staff dashboard can only be entered through Discord OAuth. Add Grizzly's Discord user ID to the admin allowlist before publishing credentials.
