@@ -4,7 +4,7 @@
    proxy is recommended for production so the webhook remains private.
    ========================================================================== */
 const CONFIG = {
-  DISCORD_CLIENT_ID: 'PASTE_DISCORD_CLIENT_ID_HERE',
+  DISCORD_CLIENT_ID: '1545198908026658908',
   DISCORD_REDIRECT_URI: 'https://shadowrp-cad.github.io/glenwood-sheriffs-paperwork-portal/dashboard.html',
   EMPLOYMENT_WEBHOOK_URL: 'PASTE_EMPLOYMENT_WEBHOOK_URL_HERE',
   INCIDENT_WEBHOOK_URL: 'PASTE_INCIDENT_WEBHOOK_URL_HERE',
@@ -256,7 +256,8 @@ async function consumeDiscordOAuth() {
     if (!response.ok) throw new Error('Could not load Discord profile');
     const user = await response.json();
     const admins = configuredAdminIds();
-    if (admins.length && !admins.includes(user.id)) return { error: 'This Discord account is not authorized for the Glenwood MDT.' };
+    if (!admins.length) return { error: "Grizzly's Discord user ID has not been added to the MDT allowlist yet." };
+    if (!admins.includes(user.id)) return { error: 'This Discord account is not authorized for the Glenwood MDT.' };
     const avatarUrl = user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128` : 'assets/crest.png';
     const profile = { id: user.id, username: user.global_name || user.username, avatarUrl, role: 'Administrator', demo: false, expiresAt: Date.now() + Number(params.get('expires_in') || 3600) * 1000 };
     localStorage.setItem(STORAGE.adminProfile, JSON.stringify(profile));

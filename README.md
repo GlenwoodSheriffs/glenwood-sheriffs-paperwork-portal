@@ -13,7 +13,7 @@ A fully static, animated Arma Reforger roleplay community portal built with vani
 
 Open `script.js` and replace the clearly marked values at the top:
 
-1. `DISCORD_CLIENT_ID`
+1. `DISCORD_CLIENT_ID` — configured for the Glenwood Sheriffs Department application
 2. `DISCORD_REDIRECT_URI`
 3. `EMPLOYMENT_WEBHOOK_URL`
 4. `INCIDENT_WEBHOOK_URL`
