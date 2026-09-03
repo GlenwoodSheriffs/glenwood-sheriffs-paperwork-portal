@@ -4,7 +4,7 @@ A fully static, animated Arma Reforger roleplay community portal built with vani
 
 ## Included pages
 
-- `index.html` — landing page, department information, roster, server status, deputy application, and civilian incident report
+- `index.html` — Discord-gated landing page, department information, roster, server status, and sheriff incident reporting
 - `dashboard.html` — Discord-connected MDT login and local paperwork review desk
 - `style.css` — responsive tactical design and animation system
 - `script.js` — Discord OAuth, webhook delivery, local caching, and administrative review actions

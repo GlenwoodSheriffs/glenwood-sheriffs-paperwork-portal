@@ -17,6 +17,7 @@ const STORAGE = {
   adminProfile: 'gsd_discord_admin_profile_v2',
   oauthState: 'gsd_discord_oauth_state_v2',
   oauthToken: 'gsd_discord_oauth_token_v2',
+  oauthReturn: 'gsd_discord_oauth_return_v2',
 };
 
 const FORM_LABELS = {
@@ -78,6 +79,7 @@ function beginDiscordLogin() {
   }
   const state = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
   sessionStorage.setItem(STORAGE.oauthState, state);
+  sessionStorage.setItem(STORAGE.oauthReturn, page === 'public' ? 'public' : 'dashboard');
   const params = new URLSearchParams({
     response_type: 'token', client_id: CONFIG.DISCORD_CLIENT_ID, redirect_uri: CONFIG.DISCORD_REDIRECT_URI,
     scope: 'identify', state, prompt: 'consent',
@@ -86,11 +88,29 @@ function beginDiscordLogin() {
 }
 
 function bindStaffLogin() {
-  document.querySelectorAll('.staff-login').forEach((button) => button.addEventListener('click', beginDiscordLogin));
+  const profile = readAdminProfile();
+  document.querySelectorAll('.staff-login').forEach((button) => {
+    if (profile && page === 'public') {
+      button.innerHTML = '<span>▣</span> Open MDT';
+      button.addEventListener('click', () => location.assign('dashboard.html'));
+    } else button.addEventListener('click', beginDiscordLogin);
+  });
 }
 
 function initPublicPage() {
   bindStaffLogin();
+  initTacticalCursor();
+  const profile = readAdminProfile();
+  const gate = document.querySelector('#site-login-gate');
+  if (!profile) {
+    document.body.classList.remove('auth-pending');
+    document.body.classList.add('auth-locked');
+    if (gate) gate.hidden = false;
+    return;
+  }
+  if (gate) gate.hidden = true;
+  document.body.classList.remove('auth-pending', 'auth-locked');
+  document.body.classList.add('auth-ready');
   const toggle = document.querySelector('.mobile-toggle');
   const nav = document.querySelector('.main-nav');
   toggle?.addEventListener('click', () => {
@@ -221,9 +241,16 @@ async function updateServerStatus() {
 
 async function initDashboard() {
   bindStaffLogin();
+  initTacticalCursor();
   const loginMessage = document.querySelector('#login-message');
   const authResult = await consumeDiscordOAuth();
   if (authResult.error) loginMessage.textContent = authResult.error;
+  if (authResult.profile && sessionStorage.getItem(STORAGE.oauthReturn) === 'public') {
+    sessionStorage.removeItem(STORAGE.oauthReturn);
+    location.replace('index.html');
+    return;
+  }
+  sessionStorage.removeItem(STORAGE.oauthReturn);
   const profile = authResult.profile || readAdminProfile();
   if (profile) showDashboard(profile);
 
@@ -295,6 +322,30 @@ function logoutAdmin() {
   localStorage.removeItem(STORAGE.adminProfile);
   sessionStorage.removeItem(STORAGE.oauthToken);
   location.reload();
+}
+
+function initTacticalCursor() {
+  if (!matchMedia('(pointer: fine)').matches) return;
+  const dot = document.createElement('span');
+  const ring = document.createElement('span');
+  dot.className = 'tactical-cursor-dot';
+  ring.className = 'tactical-cursor-ring';
+  document.body.append(dot, ring);
+  document.body.classList.add('cursor-ready');
+  let mouseX = innerWidth / 2, mouseY = innerHeight / 2, ringX = mouseX, ringY = mouseY;
+  addEventListener('pointermove', (event) => {
+    mouseX = event.clientX; mouseY = event.clientY;
+    dot.style.transform = `translate3d(${mouseX}px,${mouseY}px,0)`;
+  }, { passive: true });
+  addEventListener('pointerover', (event) => {
+    ring.classList.toggle('targeting', Boolean(event.target.closest('a,button,input,textarea,label')));
+  });
+  const animate = () => {
+    ringX += (mouseX - ringX) * .16; ringY += (mouseY - ringY) * .16;
+    ring.style.transform = `translate3d(${ringX}px,${ringY}px,0)`;
+    requestAnimationFrame(animate);
+  };
+  animate();
 }
 
 function switchAdminPanel(panel) {
@@ -393,7 +444,7 @@ function registerWebMCP() {
   if (!context?.registerTool) return;
   context.registerTool({
     name: 'list_public_submissions', title: 'List public submissions',
-    description: 'List locally cached Glenwood deputy applications and civilian incident reports.',
+    description: 'List locally cached Glenwood sheriff incident reports.',
     inputSchema: { type: 'object', properties: { status: { type: 'string', enum: ['all', 'pending', 'approved', 'denied'] } }, additionalProperties: false },
     annotations: { readOnlyHint: true, untrustedContentHint: true },
     execute: ({ status = 'all' }) => {
