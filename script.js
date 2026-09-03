@@ -6,7 +6,6 @@
 const CONFIG = {
   DISCORD_CLIENT_ID: '1545198908026658908',
   DISCORD_REDIRECT_URI: 'https://shadowrp-cad.github.io/glenwood-sheriffs-paperwork-portal/dashboard.html',
-  EMPLOYMENT_WEBHOOK_URL: 'PASTE_EMPLOYMENT_WEBHOOK_URL_HERE',
   INCIDENT_WEBHOOK_URL: 'PASTE_INCIDENT_WEBHOOK_URL_HERE',
   ADMIN_DISCORD_USER_IDS: ['1463057608276705280'], // Grizzly
   SERVER_STATUS_ENDPOINT: '', // Optional HTTPS endpoint returning { online, players, maxPlayers }.
@@ -18,12 +17,16 @@ const STORAGE = {
   oauthState: 'gsd_discord_oauth_state_v2',
   oauthToken: 'gsd_discord_oauth_token_v2',
   oauthReturn: 'gsd_discord_oauth_return_v2',
+  calls: 'gsd_dispatch_calls_v1',
+  bolos: 'gsd_bolo_records_v1',
+  activity: 'gsd_activity_log_v1',
 };
 
 const FORM_LABELS = {
-  discordTag: 'Discord Tag', age: 'Age', inGameName: 'In-game Name', priorExperience: 'Prior Experience',
-  whyGlenwood: 'Why Glenwood?', date: 'Date', location: 'Location', incidentDescription: 'Description of Incident',
+  date: 'Date', location: 'Location', incidentDescription: 'Description of Incident',
   suspectDescription: 'Suspect Description',
+  reporterName: 'Reporting Deputy / Name', incidentType: 'Incident Type', priority: 'Priority',
+  evidence: 'Evidence & Related Information',
 };
 
 const page = document.body.dataset.page;
@@ -49,6 +52,31 @@ function readSubmissions() {
 
 function writeSubmissions(records) {
   localStorage.setItem(STORAGE.submissions, JSON.stringify(records));
+}
+
+function readCollection(key) {
+  try {
+    const value = JSON.parse(localStorage.getItem(key) || '[]');
+    return Array.isArray(value) ? value : [];
+  } catch { return []; }
+}
+
+function writeCollection(key, value) {
+  localStorage.setItem(key, JSON.stringify(value));
+}
+
+function startClock(selector) {
+  const element = document.querySelector(selector);
+  if (!element) return;
+  const tick = () => { element.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }); };
+  tick();
+  setInterval(tick, 1000);
+}
+
+function logActivity(action, detail) {
+  const items = readCollection(STORAGE.activity);
+  items.unshift({ id: makeId('LOG'), action, detail, at: new Date().toISOString(), by: readAdminProfile()?.username || 'System' });
+  writeCollection(STORAGE.activity, items.slice(0, 100));
 }
 
 function makeId(prefix) {
@@ -111,6 +139,13 @@ function initPublicPage() {
   if (gate) gate.hidden = true;
   document.body.classList.remove('auth-pending', 'auth-locked');
   document.body.classList.add('auth-ready');
+  const portalAvatar = document.querySelector('#portal-avatar');
+  if (portalAvatar) portalAvatar.src = profile.avatarUrl;
+  const portalUsername = document.querySelector('#portal-username');
+  if (portalUsername) portalUsername.textContent = profile.username;
+  startClock('#portal-clock');
+  const dateField = document.querySelector('#incident-form input[name="date"]');
+  if (dateField && !dateField.value) dateField.value = new Date().toISOString().slice(0, 10);
   const toggle = document.querySelector('.mobile-toggle');
   const nav = document.querySelector('.main-nav');
   toggle?.addEventListener('click', () => {
@@ -150,7 +185,7 @@ async function submitPublicForm(event) {
   const type = form.dataset.submissionType;
   const fields = Object.fromEntries(new FormData(form).entries());
   const record = {
-    id: makeId(type === 'employment' ? 'APP' : 'CIR'), type, fields, status: 'pending',
+    id: makeId('CIR'), type, fields, status: 'pending',
     submittedAt: new Date().toISOString(), reviewedAt: null, reviewedBy: null,
   };
   const records = readSubmissions();
@@ -164,7 +199,7 @@ async function submitPublicForm(event) {
   message.textContent = 'Saving local copy and contacting Discord…';
   message.className = 'form-message';
 
-  const webhookUrl = type === 'employment' ? CONFIG.EMPLOYMENT_WEBHOOK_URL : CONFIG.INCIDENT_WEBHOOK_URL;
+  const webhookUrl = CONFIG.INCIDENT_WEBHOOK_URL;
   try {
     if (!isConfigured(webhookUrl)) {
       message.textContent = 'Saved locally. Configure the Discord webhook in script.js to deliver staff copies.';
@@ -189,7 +224,6 @@ async function submitPublicForm(event) {
 }
 
 async function sendToDiscord(record, webhookUrl) {
-  const isEmployment = record.type === 'employment';
   const fields = Object.entries(record.fields).map(([name, value]) => ({
     name: FORM_LABELS[name] || name,
     value: cleanDiscordValue(value),
@@ -199,9 +233,9 @@ async function sendToDiscord(record, webhookUrl) {
     username: "Glenwood Sheriff's Department",
     allowed_mentions: { parse: [] },
     embeds: [{
-      title: isEmployment ? 'New Deputy Application' : 'New Civilian Incident Report',
+      title: 'New Sheriff Incident Report',
       description: `Submission ID: **${record.id}**`,
-      color: isEmployment ? 14191957 : 2266879,
+      color: 2266879,
       fields,
       footer: { text: "Glenwood Sheriff's Department · Public Records" },
       timestamp: record.submittedAt,
@@ -255,6 +289,7 @@ async function initDashboard() {
   if (profile) showDashboard(profile);
 
   document.querySelector('#logout-button')?.addEventListener('click', logoutAdmin);
+  startClock('#mdt-clock');
   document.querySelector('.mdt-mobile-toggle')?.addEventListener('click', () => document.querySelector('.mdt-sidebar').classList.toggle('open'));
   document.querySelectorAll('.mdt-nav[data-panel]').forEach((button) => button.addEventListener('click', () => switchAdminPanel(button.dataset.panel)));
   document.querySelectorAll('.filter').forEach((button) => button.addEventListener('click', () => {
@@ -267,6 +302,13 @@ async function initDashboard() {
   document.querySelector('#export-records')?.addEventListener('click', exportRecords);
   document.querySelector('#import-records')?.addEventListener('change', importRecords);
   document.querySelector('#clear-records')?.addEventListener('click', clearRecords);
+  document.querySelectorAll('[data-open-composer]').forEach((button) => button.addEventListener('click', () => openComposer(button.dataset.openComposer)));
+  document.querySelector('.composer-close')?.addEventListener('click', () => document.querySelector('#composer-dialog').close());
+  document.querySelector('#composer-form')?.addEventListener('submit', saveComposerRecord);
+  document.querySelector('#dispatch-list')?.addEventListener('click', handleDispatchAction);
+  document.querySelector('#bolo-list')?.addEventListener('click', handleBoloAction);
+  const requestedPanel = location.hash.slice(1);
+  if (['dispatch', 'bolo', 'analytics'].includes(requestedPanel)) switchAdminPanel(requestedPanel);
 }
 
 async function consumeDiscordOAuth() {
@@ -315,6 +357,8 @@ function showDashboard(profile) {
   document.querySelector('#welcome-name').textContent = profile.username;
   document.querySelector('#admin-avatar').src = profile.avatarUrl;
   renderSubmissions();
+  renderDispatch();
+  renderBolos();
   updateMetrics();
 }
 
@@ -349,11 +393,19 @@ function initTacticalCursor() {
 }
 
 function switchAdminPanel(panel) {
-  document.querySelector('#review-panel').hidden = panel !== 'review';
-  document.querySelector('#analytics-panel').hidden = panel !== 'analytics';
+  ['review', 'dispatch', 'bolo', 'analytics'].forEach((name) => {
+    const element = document.querySelector(`#${name}-panel`);
+    if (element) element.hidden = name !== panel;
+  });
   document.querySelectorAll('.mdt-nav[data-panel]').forEach((button) => button.classList.toggle('active', button.dataset.panel === panel));
+  const titles = { review: 'Records Desk', dispatch: 'Dispatch Board', bolo: 'BOLO Network', analytics: 'Administration' };
+  const panelTitle = document.querySelector('#mdt-panel-title');
+  if (panelTitle) panelTitle.textContent = titles[panel] || 'Command Center';
+  history.replaceState(null, '', panel === 'review' ? location.pathname : `#${panel}`);
   document.querySelector('.mdt-sidebar').classList.remove('open');
   if (panel === 'review') renderSubmissions();
+  if (panel === 'dispatch') renderDispatch();
+  if (panel === 'bolo') renderBolos();
 }
 
 function updateMetrics() {
@@ -378,9 +430,9 @@ function renderSubmissions(filter = 'all', query = '') {
 }
 
 function submissionCard(record) {
-  const title = record.type === 'employment' ? 'Deputy Application' : 'Civilian Incident Report';
-  const summary = record.type === 'employment' ? record.fields.inGameName : record.fields.location;
-  return `<article class="submission-card"><span class="submission-type">${record.type === 'employment' ? '★' : '!'}</span><div class="submission-copy"><strong>${escapeHtml(title)} · ${escapeHtml(record.id)}</strong><span>${escapeHtml(summary || 'No summary')} · ${new Date(record.submittedAt).toLocaleString()}</span></div><div class="submission-actions"><span class="status-tag ${record.status}">${record.status}</span><button class="small-action view" data-action="view" data-id="${record.id}">View</button><button class="small-action approve" data-action="approved" data-id="${record.id}">Approve</button><button class="small-action deny" data-action="denied" data-id="${record.id}">Deny</button></div></article>`;
+  const title = 'Sheriff Incident Report';
+  const summary = record.fields.location;
+  return `<article class="submission-card"><span class="submission-type">!</span><div class="submission-copy"><strong>${escapeHtml(title)} · ${escapeHtml(record.id)}</strong><span>${escapeHtml(summary || 'No summary')} · ${new Date(record.submittedAt).toLocaleString()}</span></div><div class="submission-actions"><span class="status-tag ${record.status}">${record.status}</span><button class="small-action view" data-action="view" data-id="${record.id}">View</button><button class="small-action approve" data-action="approved" data-id="${record.id}">Approve</button><button class="small-action deny" data-action="denied" data-id="${record.id}">Deny</button></div></article>`;
 }
 
 function handleSubmissionAction(event) {
@@ -395,6 +447,7 @@ function handleSubmissionAction(event) {
   record.reviewedAt = new Date().toISOString();
   record.reviewedBy = profile?.username || 'Grizzly';
   writeSubmissions(records);
+  logActivity('Report reviewed', `${record.id} marked ${record.status}`);
   renderSubmissions(document.querySelector('.filter.active').dataset.filter, document.querySelector('#submission-search').value);
   showToast(`Paperwork marked ${record.status}`);
 }
@@ -402,7 +455,7 @@ function handleSubmissionAction(event) {
 function openSubmission(id) {
   const record = readSubmissions().find((item) => item.id === id);
   if (!record) return;
-  const title = record.type === 'employment' ? 'Deputy Application' : 'Civilian Incident Report';
+  const title = 'Sheriff Incident Report';
   document.querySelector('#dialog-content').innerHTML = `<div class="dialog-title"><p class="eyebrow">${escapeHtml(record.id)}</p><h2>${title}</h2><p>Submitted ${new Date(record.submittedAt).toLocaleString()} · Status: ${escapeHtml(record.status)}</p></div><div class="dialog-fields">${Object.entries(record.fields).map(([key, value]) => `<div class="dialog-field ${String(value).length > 80 ? 'wide' : ''}"><span>${escapeHtml(FORM_LABELS[key] || key)}</span><p>${escapeHtml(value)}</p></div>`).join('')}</div>`;
   document.querySelector('#submission-dialog').showModal();
 }
@@ -424,7 +477,7 @@ async function importRecords(event) {
   try {
     const backup = JSON.parse(await file.text());
     if (!Array.isArray(backup.submissions)) throw new Error('Invalid backup');
-    writeSubmissions(backup.submissions.filter((record) => record?.id && ['employment', 'incident'].includes(record.type)));
+    writeSubmissions(backup.submissions.filter((record) => record?.id && record.type === 'incident'));
     updateMetrics();
     showToast('Records backup imported');
   } catch {
@@ -437,6 +490,93 @@ function clearRecords() {
   writeSubmissions([]);
   updateMetrics();
   showToast('Local records archive cleared');
+}
+
+const COMPOSERS = {
+  call: {
+    title: 'Create dispatch call', eyebrow: 'COMPUTER-AIDED DISPATCH',
+    fields: `<div class="composer-grid"><label><span>Call Type</span><input name="title" required maxlength="80" placeholder="Traffic collision, disturbance…"></label><label><span>Priority</span><select name="priority" required><option>Priority 3</option><option>Priority 2</option><option>Priority 1</option></select></label><label class="wide"><span>Location</span><input name="location" required maxlength="140" placeholder="Road, town, grid, or landmark"></label><label><span>Assigned Unit</span><input name="unit" maxlength="40" placeholder="Unassigned"></label><label><span>Caller / Source</span><input name="source" maxlength="80" placeholder="Dispatch, civilian, unit…"></label><label class="wide"><span>Call Notes</span><textarea name="notes" required maxlength="1200" placeholder="Known facts and officer-safety information"></textarea></label></div>`,
+  },
+  bolo: {
+    title: 'Publish BOLO', eyebrow: 'COUNTY-WIDE ALERT NETWORK',
+    fields: `<div class="composer-grid"><label><span>Subject / Vehicle</span><input name="subject" required maxlength="100" placeholder="Name, plate, or identifying label"></label><label><span>Alert Type</span><select name="kind" required><option>Wanted Person</option><option>Vehicle</option><option>Missing Person</option><option>Officer Safety</option></select></label><label class="wide"><span>Last Known Location</span><input name="location" required maxlength="140" placeholder="Last seen location"></label><label class="wide"><span>Description</span><textarea name="description" required maxlength="1400" placeholder="Appearance, clothing, vehicle, direction, charges, and cautions"></textarea></label><label><span>Risk Level</span><select name="risk" required><option>Use Caution</option><option>High Risk</option><option>Information Only</option></select></label><label><span>Issuing Unit</span><input name="unit" required maxlength="50" placeholder="GSD-01"></label></div>`,
+  },
+};
+
+function openComposer(type) {
+  const config = COMPOSERS[type];
+  if (!config) return;
+  const form = document.querySelector('#composer-form');
+  form.dataset.type = type;
+  form.reset();
+  document.querySelector('#composer-title').textContent = config.title;
+  document.querySelector('#composer-eyebrow').textContent = config.eyebrow;
+  document.querySelector('#composer-fields').innerHTML = config.fields;
+  document.querySelector('#composer-dialog').showModal();
+}
+
+function saveComposerRecord(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  if (!form.checkValidity()) return form.reportValidity();
+  const type = form.dataset.type;
+  const fields = Object.fromEntries(new FormData(form).entries());
+  const key = type === 'call' ? STORAGE.calls : STORAGE.bolos;
+  const records = readCollection(key);
+  records.unshift({ id: makeId(type === 'call' ? 'CAD' : 'BOLO'), ...fields, status: 'active', createdAt: new Date().toISOString(), createdBy: readAdminProfile()?.username || 'Grizzly' });
+  writeCollection(key, records);
+  logActivity(type === 'call' ? 'Dispatch call created' : 'BOLO published', type === 'call' ? fields.title : fields.subject);
+  document.querySelector('#composer-dialog').close();
+  type === 'call' ? renderDispatch() : renderBolos();
+  showToast(type === 'call' ? 'Call added to dispatch board' : 'BOLO published to network');
+}
+
+function renderDispatch() {
+  const list = document.querySelector('#dispatch-list');
+  const calls = readCollection(STORAGE.calls);
+  const active = calls.filter((call) => call.status === 'active');
+  if (list) list.innerHTML = active.length ? active.map((call) => `<article class="dispatch-call priority-${escapeHtml(call.priority.slice(-1))}"><div class="call-priority"><small>${escapeHtml(call.priority)}</small><b>${escapeHtml(call.id)}</b></div><div class="call-main"><span>${escapeHtml(call.location)}</span><h3>${escapeHtml(call.title)}</h3><p>${escapeHtml(call.notes)}</p><small>Source: ${escapeHtml(call.source || 'Unknown')} · Created ${new Date(call.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</small></div><div class="call-unit"><small>ASSIGNED UNIT</small><b>${escapeHtml(call.unit || 'UNASSIGNED')}</b><button data-call-action="clear" data-id="${call.id}">Clear call</button></div></article>`).join('') : `<div class="empty-review"><b>No active calls</b><p>Dispatch is clear. Create a call when service is requested.</p></div>`;
+  const today = new Date().toDateString();
+  setText('#calls-active', active.length);
+  setText('#calls-unassigned', active.filter((call) => !call.unit).length);
+  setText('#calls-cleared', calls.filter((call) => call.status === 'cleared' && new Date(call.clearedAt).toDateString() === today).length);
+  setText('#nav-call-count', active.length);
+}
+
+function handleDispatchAction(event) {
+  const button = event.target.closest('[data-call-action]');
+  if (!button) return;
+  const calls = readCollection(STORAGE.calls);
+  const call = calls.find((item) => item.id === button.dataset.id);
+  if (!call) return;
+  call.status = 'cleared'; call.clearedAt = new Date().toISOString();
+  writeCollection(STORAGE.calls, calls);
+  logActivity('Dispatch call cleared', call.id);
+  renderDispatch(); showToast(`${call.id} cleared`);
+}
+
+function renderBolos() {
+  const list = document.querySelector('#bolo-list');
+  const bolos = readCollection(STORAGE.bolos).filter((bolo) => bolo.status === 'active');
+  if (list) list.innerHTML = bolos.length ? bolos.map((bolo) => `<article class="bolo-card"><div class="bolo-alert"><span>BOLO</span><b>${escapeHtml(bolo.kind)}</b></div><div><small>${escapeHtml(bolo.id)} · ISSUED BY ${escapeHtml(bolo.unit)}</small><h3>${escapeHtml(bolo.subject)}</h3><p>${escapeHtml(bolo.description)}</p><div class="bolo-meta"><span>⌖ ${escapeHtml(bolo.location)}</span><strong>${escapeHtml(bolo.risk)}</strong></div></div><button data-bolo-action="resolve" data-id="${bolo.id}">Mark located</button></article>`).join('') : `<div class="empty-review"><b>No active BOLOs</b><p>The county-wide alert network is currently clear.</p></div>`;
+  setText('#nav-bolo-count', bolos.length);
+}
+
+function handleBoloAction(event) {
+  const button = event.target.closest('[data-bolo-action]');
+  if (!button) return;
+  const bolos = readCollection(STORAGE.bolos);
+  const bolo = bolos.find((item) => item.id === button.dataset.id);
+  if (!bolo) return;
+  bolo.status = 'resolved'; bolo.resolvedAt = new Date().toISOString();
+  writeCollection(STORAGE.bolos, bolos);
+  logActivity('BOLO resolved', bolo.id);
+  renderBolos(); showToast(`${bolo.id} marked located`);
+}
+
+function setText(selector, value) {
+  const element = document.querySelector(selector);
+  if (element) element.textContent = value;
 }
 
 function registerWebMCP() {

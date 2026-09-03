@@ -11,8 +11,8 @@
   <meta name="twitter:card" content="summary_large_image">
   <title>Glenwood Sheriff's Department | Arma Reforger RP</title>
   <link rel="icon" href="assets/crest.png">
-  <link rel="stylesheet" href="style.css?v=10">
-  <script src="script.js?v=10" defer></script>
+  <link rel="stylesheet" href="style.css?v=11">
+  <script src="script.js?v=11" defer></script>
 </head>
 <body data-page="public" class="auth-pending">
   <section class="site-login-gate" id="site-login-gate" aria-labelledby="site-login-title">
@@ -39,8 +39,11 @@
     <nav class="main-nav" aria-label="Main navigation">
       <a href="#department">Department</a><a href="#roster">Roster</a><a href="#records">Incident Reports</a><a href="#status">Server Status</a>
     </nav>
-    <button class="discord-button staff-login" type="button"><span>◉</span> Staff Login</button>
+    <div class="session-chip"><img id="portal-avatar" src="assets/crest.png" alt=""><span><small>SECURE SESSION</small><b id="portal-username">Authorized</b></span></div>
+    <button class="discord-button staff-login" type="button"><span>▣</span> Open MDT</button>
   </header>
+
+  <div class="ops-ticker" aria-label="Department operations ticker"><span class="online-beacon"></span><b>GSD OPERATIONS ACTIVE</b><i></i><span>DISPATCH: PRIMARY</span><i></i><span>PATROL STATUS: 10-8</span><i></i><span id="portal-clock">--:--:--</span></div>
 
   <main>
     <section class="hero" aria-labelledby="hero-title">
@@ -48,7 +51,7 @@
         <p class="eyebrow">ARMA REFORGER ROLEPLAY · LAW ENFORCEMENT</p>
         <h1 id="hero-title">Honor in service.<br><span>Strength in community.</span></h1>
         <p class="hero-lede">Serving the citizens of Glenwood through professionalism, integrity, and realistic law-enforcement roleplay.</p>
-        <div class="hero-actions"><a class="button gold" href="#records">File incident report</a><a class="button ghost" href="dashboard.html">Open MDT</a></div>
+        <div class="hero-actions"><a class="button gold" href="#records">File incident report</a><a class="button ghost" href="dashboard.html">Enter command center</a></div>
         <div class="unit-strip"><span>01</span><p><b>Professional RP</b><small>Structured patrol and investigations</small></p><span>02</span><p><b>Active Command</b><small>Training, leadership, and support</small></p></div>
       </div>
       <div class="hero-visual reveal delay-1">
@@ -56,6 +59,16 @@
         <!-- OPTIONAL LOOPING GIF: replace the source below with assets/flashing-lightbar.gif -->
         <img class="gif-placeholder lightbar-gif" src="assets/background.gif" alt="Animated red and blue emergency lights">
         <div class="status-float"><span class="online-beacon"></span><div><small>DISPATCH NETWORK</small><strong>SERVER ONLINE</strong></div></div>
+      </div>
+    </section>
+
+    <section class="quick-ops section-shell" aria-labelledby="quick-ops-title">
+      <div class="section-heading"><p class="eyebrow">AUTHORIZED QUICK ACCESS</p><h2 id="quick-ops-title">Department operations</h2></div>
+      <div class="quick-ops-grid">
+        <a href="#records"><span>01</span><div><b>New Incident Report</b><small>File an official report for command review</small></div><i>→</i></a>
+        <a href="dashboard.html#dispatch"><span>02</span><div><b>Dispatch Board</b><small>Manage active calls and unit assignments</small></div><i>→</i></a>
+        <a href="dashboard.html#bolo"><span>03</span><div><b>Active BOLOs</b><small>View and publish department alerts</small></div><i>→</i></a>
+        <a href="dashboard.html"><span>04</span><div><b>Records Desk</b><small>Review, approve, and archive reports</small></div><i>→</i></a>
       </div>
     </section>
 
@@ -72,6 +85,11 @@
     <section class="department section-shell" id="department">
       <div class="split-heading"><div><p class="eyebrow">ABOUT THE DEPARTMENT</p><h2>Built for serious roleplay.</h2></div><p>The Glenwood Sheriff's Department provides organized patrol, investigations, traffic enforcement, and public-safety roleplay across the server. Every deputy is expected to lead with maturity and respect.</p></div>
       <div class="value-grid"><article><span>01</span><h3>Service</h3><p>Support the community and make every interaction meaningful.</p></article><article><span>02</span><h3>Integrity</h3><p>Follow department standards and make fair, consistent decisions.</p></article><article><span>03</span><h3>Community</h3><p>Create memorable scenes that give every player room to participate.</p></article></div>
+      <div class="division-grid">
+        <article><span class="division-icon">★</span><div><small>DIVISION 01</small><h3>Patrol Operations</h3><p>Proactive patrol, traffic enforcement, emergency response, and community policing throughout Glenwood County.</p></div></article>
+        <article><span class="division-icon">⌖</span><div><small>DIVISION 02</small><h3>Criminal Investigations</h3><p>Evidence-led investigations, interviews, case development, and inter-agency coordination.</p></div></article>
+        <article><span class="division-icon">◈</span><div><small>DIVISION 03</small><h3>Special Response</h3><p>High-risk warrants, tactical incidents, critical response, and advanced operational support.</p></div></article>
+      </div>
     </section>
 
     <section class="roster section-shell" id="roster">
@@ -84,7 +102,7 @@
       <div class="filing-panel">
         <form class="public-form active" id="incident-form" data-submission-type="incident" novalidate>
           <div class="form-heading"><span>01</span><div><h3>Sheriff Incident Report</h3><p>Provide a clear factual account for department review.</p></div></div>
-          <div class="field-grid"><label><span>Date</span><input name="date" type="date" required></label><label><span>Location</span><input name="location" required maxlength="160" placeholder="Road, town, or landmark"></label><label class="wide"><span>Description of Incident</span><textarea name="incidentDescription" required maxlength="1800" placeholder="Explain what happened in chronological order."></textarea></label><label class="wide"><span>Suspect Description</span><textarea name="suspectDescription" required maxlength="1200" placeholder="Appearance, clothing, vehicle, direction of travel, or other identifying details."></textarea></label></div>
+          <div class="field-grid"><label><span>Reporting Deputy / Name</span><input name="reporterName" required maxlength="80" placeholder="Name or callsign"></label><label><span>Date</span><input name="date" type="date" required></label><label><span>Incident Type</span><select name="incidentType" required><option value="">Select classification</option><option>Traffic Stop</option><option>Arrest</option><option>Use of Force</option><option>Property Crime</option><option>Violent Crime</option><option>Medical / Welfare</option><option>Other</option></select></label><label><span>Priority</span><select name="priority" required><option value="Routine">Routine</option><option value="Elevated">Elevated</option><option value="Critical">Critical</option></select></label><label class="wide"><span>Location</span><input name="location" required maxlength="160" placeholder="Road, town, grid reference, or landmark"></label><label class="wide"><span>Description of Incident</span><textarea name="incidentDescription" required maxlength="3000" placeholder="Give a factual, chronological account: units involved, actions taken, and outcome."></textarea></label><label class="wide"><span>Subject / Suspect Description</span><textarea name="suspectDescription" required maxlength="1600" placeholder="Name if known, appearance, clothing, vehicle, direction of travel, or identifiers."></textarea></label><label class="wide"><span>Evidence & Related Information <em>optional</em></span><textarea name="evidence" maxlength="1200" placeholder="Evidence collected, witness names, related report IDs, or follow-up needed."></textarea></label></div>
           <label class="consent"><input type="checkbox" required><span>I confirm this report is truthful to the best of my knowledge.</span></label><button class="button gold submit-button" type="submit">Submit incident report <b>→</b></button><output class="form-message" aria-live="polite"></output>
         </form>
       </div>

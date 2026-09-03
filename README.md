@@ -5,7 +5,7 @@ A fully static, animated Arma Reforger roleplay community portal built with vani
 ## Included pages
 
 - `index.html` — Discord-gated landing page, department information, roster, server status, and sheriff incident reporting
-- `dashboard.html` — Discord-connected MDT login and local paperwork review desk
+- `dashboard.html` — Discord-connected MDT, records review, dispatch board, and BOLO network
 - `style.css` — responsive tactical design and animation system
 - `script.js` — Discord OAuth, webhook delivery, local caching, and administrative review actions
 
@@ -15,9 +15,8 @@ Open `script.js` and replace the clearly marked values at the top:
 
 1. `DISCORD_CLIENT_ID` — configured for the Glenwood Sheriffs Department application
 2. `DISCORD_REDIRECT_URI`
-3. `EMPLOYMENT_WEBHOOK_URL`
-4. `INCIDENT_WEBHOOK_URL`
-5. `ADMIN_DISCORD_USER_IDS` — configured for Grizzly's Discord account
+3. `INCIDENT_WEBHOOK_URL`
+4. `ADMIN_DISCORD_USER_IDS` — configured for Grizzly's Discord account
 
 In the Discord Developer Portal, add this exact OAuth2 redirect:
 
