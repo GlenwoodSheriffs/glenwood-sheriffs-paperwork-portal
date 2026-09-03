@@ -1,15 +1,44 @@
-# Glenwood Sheriffs Department — Paperwork Portal
+# Glenwood Sheriff's Department Community Portal
 
-A browser-based paperwork workspace for creating incident reports, arrest reports, traffic citations, BOLO notices, and evidence logs.
+A fully static, animated Arma Reforger roleplay community portal built with vanilla HTML, CSS, and JavaScript for GitHub Pages.
 
-## Features
+## Included pages
 
-- Five department paperwork templates
-- Device-local draft saving and search
-- Reopen and delete saved drafts
-- Clean print layouts
-- Animated Glenwood visual theme
-- Responsive desktop and mobile interface
-- No backend or account required
+- `index.html` — landing page, department information, roster, server status, deputy application, and civilian incident report
+- `dashboard.html` — Discord-connected MDT login and local paperwork review desk
+- `style.css` — responsive tactical design and animation system
+- `script.js` — Discord OAuth, webhook delivery, local caching, and administrative review actions
 
-Draft data is stored only in the current browser using local storage.
+## Discord configuration
+
+Open `script.js` and replace the clearly marked values at the top:
+
+1. `DISCORD_CLIENT_ID`
+2. `DISCORD_REDIRECT_URI`
+3. `EMPLOYMENT_WEBHOOK_URL`
+4. `INCIDENT_WEBHOOK_URL`
+5. `ADMIN_DISCORD_USER_IDS` — add Grizzly's Discord user ID
+
+In the Discord Developer Portal, add this exact OAuth2 redirect:
+
+```text
+https://shadowrp-cad.github.io/glenwood-sheriffs-paperwork-portal/dashboard.html
+```
+
+Set `DEMO_ADMIN_ENABLED` to `false` after OAuth is configured.
+
+## Optional server status
+
+Set `SERVER_STATUS_ENDPOINT` to an HTTPS endpoint that permits browser requests and returns:
+
+```json
+{ "online": true, "players": 42, "maxPlayers": 64 }
+```
+
+## Important GitHub Pages limitations
+
+- Anything placed in `script.js`, including webhook URLs, is publicly readable. Use a serverless proxy for production webhook delivery.
+- `localStorage` belongs to one browser on one device. Public submissions made on other devices will reach Discord when configured, but they will not appear in Grizzly's local MDT archive.
+- Client-side OAuth can identify a Discord user, but it cannot provide strong server-enforced authorization on its own.
+
+For shared cross-device records and secure roles, connect the interface to a backend database and server-side Discord OAuth flow.

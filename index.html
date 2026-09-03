@@ -1,17 +1,97 @@
 <!doctype html>
-<html lang="en"><head>
-  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#070b11">
-  <meta name="description" content="Create, save, search, and print Glenwood Sheriffs Department paperwork.">
-  <meta property="og:title" content="Glenwood Sheriffs Department | Paperwork Portal"><meta property="og:description" content="A focused workspace for incident reports, arrests, citations, BOLOs, and evidence logs."><meta property="og:image" content="https://shadowrp-cad.github.io/glenwood-sheriffs-paperwork-portal/assets/social-preview.png"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="https://shadowrp-cad.github.io/glenwood-sheriffs-paperwork-portal/assets/social-preview.png"><link rel="icon" href="assets/crest.png">
-  <title>Glenwood Sheriffs Department | Paperwork Portal</title><link rel="stylesheet" href="styles.css?v=3"><link rel="stylesheet" href="features.css?v=3"><link rel="stylesheet" href="github.css?v=3"><link rel="stylesheet" href="mobile.css?v=3"><link rel="stylesheet" href="admin.css?v=3"><script src="app.js?v=3" defer></script>
-</head><body>
-  <main class="app-shell"><div class="animated-backdrop" aria-hidden="true"></div><div class="backdrop-shade" aria-hidden="true"></div>
-    <aside class="sidebar" id="sidebar"><div class="brand-block"><img src="assets/crest.png" alt="Glenwood Sheriffs Department badge"><div><p>Glenwood</p><span>Sheriffs Department</span></div></div>
-      <nav aria-label="Primary navigation"><p class="nav-heading">Workspace</p><button class="nav-item" data-view="dashboard"><span class="nav-icon">▦</span><span>Dashboard</span></button><button class="nav-item admin-nav" data-view="admin"><span class="nav-icon">♛</span><span>Admin Console</span></button><p class="nav-heading reports-heading">Reports</p><div id="template-nav"></div></nav>
-      <div class="admin-profile"><span class="admin-avatar">G</span><div><strong>Grizzly</strong><span>Administrator</span></div><b>ADMIN</b></div><div class="sidebar-status"><b>✓</b><div><strong>Local & private</strong><span>Drafts stay on this device</span></div></div>
-    </aside>
-    <section class="workspace"><header class="topbar"><button class="menu-button" id="menu-button" aria-label="Toggle menu">☰</button><div><p class="eyebrow" id="breadcrumb">Operations / Paperwork</p><h1 id="page-title">Dashboard</h1></div>
-      <div class="topbar-actions"><label class="search-box"><span>⌕</span><input id="search" placeholder="Search saved drafts" aria-label="Search saved drafts"></label><button class="glass-button" id="print-button">⎙ Print</button><button class="gold-button" id="save-button">✓ Save draft</button></div></header>
-      <div class="content-wrap" id="content"></div></section>
-  </main><div class="mobile-scrim" id="mobile-scrim"></div><div class="toast" id="toast" role="status" aria-live="polite"></div>
-</body></html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#050a12">
+  <meta name="description" content="Official community portal for the Glenwood Sheriff's Department Arma Reforger roleplay server.">
+  <meta property="og:title" content="Glenwood Sheriff's Department">
+  <meta property="og:description" content="Protecting Glenwood together — department information, roster, applications, and public incident filing.">
+  <meta property="og:image" content="https://shadowrp-cad.github.io/glenwood-sheriffs-paperwork-portal/assets/social-preview.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <title>Glenwood Sheriff's Department | Arma Reforger RP</title>
+  <link rel="icon" href="assets/crest.png">
+  <link rel="stylesheet" href="style.css?v=4">
+  <script src="script.js?v=4" defer></script>
+</head>
+<body data-page="public">
+  <div class="site-background" aria-hidden="true"></div>
+  <div class="tactical-grid" aria-hidden="true"></div>
+  <div class="emergency-wash" aria-hidden="true"><i></i><i></i></div>
+
+  <header class="site-header" id="top">
+    <a class="brand" href="#top" aria-label="Glenwood Sheriff's Department home">
+      <img src="assets/crest.png" alt="Glenwood Sheriff's Department badge">
+      <span><strong>GLENWOOD</strong><small>SHERIFF'S DEPARTMENT</small></span>
+    </a>
+    <button class="mobile-toggle" type="button" aria-label="Open navigation" aria-expanded="false">☰</button>
+    <nav class="main-nav" aria-label="Main navigation">
+      <a href="#department">Department</a><a href="#roster">Roster</a><a href="#records">Public Filing</a><a href="#status">Server Status</a>
+    </nav>
+    <button class="discord-button staff-login" type="button"><span>◉</span> Staff Login</button>
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-copy reveal">
+        <p class="eyebrow">ARMA REFORGER ROLEPLAY · LAW ENFORCEMENT</p>
+        <h1 id="hero-title">Honor in service.<br><span>Strength in community.</span></h1>
+        <p class="hero-lede">Serving the citizens of Glenwood through professionalism, integrity, and realistic law-enforcement roleplay.</p>
+        <div class="hero-actions"><a class="button gold" href="#records">File paperwork</a><a class="button ghost" href="#department">Explore department</a></div>
+        <div class="unit-strip"><span>01</span><p><b>Professional RP</b><small>Structured patrol and investigations</small></p><span>02</span><p><b>Active Command</b><small>Training, leadership, and support</small></p></div>
+      </div>
+      <div class="hero-visual reveal delay-1">
+        <div class="crest-halo"></div><img class="hero-crest" src="assets/crest.png" alt="Glenwood Sheriff's Department emblem">
+        <!-- OPTIONAL LOOPING GIF: replace the source below with assets/flashing-lightbar.gif -->
+        <img class="gif-placeholder lightbar-gif" src="assets/background.gif" alt="Animated red and blue emergency lights">
+        <div class="status-float"><span class="online-beacon"></span><div><small>DISPATCH NETWORK</small><strong>SERVER ONLINE</strong></div></div>
+      </div>
+    </section>
+
+    <section class="status-deck section-shell" id="status" aria-labelledby="status-title">
+      <div class="section-heading"><p class="eyebrow">LIVE OPERATIONS</p><h2 id="status-title">Glenwood dispatch status</h2></div>
+      <div class="status-grid">
+        <article class="status-card primary"><div class="status-line"><span class="online-beacon"></span><b id="server-label">SERVER ONLINE</b></div><strong id="player-count">-- / --</strong><span>PLAYERS CONNECTED</span><small id="status-updated">Awaiting live endpoint configuration</small></article>
+        <article class="status-card"><span>REGION</span><strong>North America</strong><small>Optimized for US roleplay sessions</small></article>
+        <article class="status-card"><span>COMMUNICATIONS</span><strong>Discord Active</strong><small>Applications and staff coordination</small></article>
+        <article class="status-card"><span>DEPARTMENT</span><strong>Recruiting</strong><small>Deputy applications are open</small></article>
+      </div>
+    </section>
+
+    <section class="department section-shell" id="department">
+      <div class="split-heading"><div><p class="eyebrow">ABOUT THE DEPARTMENT</p><h2>Built for serious roleplay.</h2></div><p>The Glenwood Sheriff's Department provides organized patrol, investigations, traffic enforcement, and public-safety roleplay across the server. Every deputy is expected to lead with maturity and respect.</p></div>
+      <div class="value-grid"><article><span>01</span><h3>Service</h3><p>Support the community and make every interaction meaningful.</p></article><article><span>02</span><h3>Integrity</h3><p>Follow department standards and make fair, consistent decisions.</p></article><article><span>03</span><h3>Community</h3><p>Create memorable scenes that give every player room to participate.</p></article></div>
+    </section>
+
+    <section class="roster section-shell" id="roster">
+      <div class="section-heading centered"><p class="eyebrow">CHAIN OF COMMAND</p><h2>Department roster</h2><p>Meet the command staff responsible for operations, training, and standards.</p></div>
+      <div class="roster-grid"><article class="officer-card command"><div class="avatar">G</div><span class="rank">SHERIFF · ADMINISTRATOR</span><h3>Grizzly</h3><p>Department command, administration, and community leadership.</p><i class="online-dot"></i></article><article class="officer-card"><div class="avatar muted">C</div><span class="rank">UNDERSHERIFF</span><h3>Command Slot</h3><p>Operations oversight and deputy development.</p></article><article class="officer-card"><div class="avatar muted">P</div><span class="rank">PATROL DIVISION</span><h3>Now Recruiting</h3><p>Submit a deputy application below to join the department.</p></article></div>
+    </section>
+
+    <section class="records section-shell" id="records">
+      <div class="records-intro"><p class="eyebrow">PUBLIC RECORDS & FILING</p><h2>Submit department paperwork</h2><p>Choose the correct form. A local copy is saved to this browser and, after webhook setup, a staff copy is delivered to Discord.</p><div class="privacy-chip">◈ Same-device local archive enabled</div></div>
+      <div class="filing-panel">
+        <div class="form-tabs" role="tablist"><button class="form-tab active" data-form-tab="employment" role="tab" aria-selected="true">Deputy Application</button><button class="form-tab" data-form-tab="incident" role="tab" aria-selected="false">Civilian Incident Report</button></div>
+        <form class="public-form active" id="employment-form" data-submission-type="employment" novalidate>
+          <div class="form-heading"><span>01</span><div><h3>Employment / Deputy Application</h3><p>Tell command staff why you are ready to serve.</p></div></div>
+          <div class="field-grid"><label><span>Discord Tag</span><input name="discordTag" required maxlength="80" placeholder="username or username#0000"></label><label><span>Age</span><input name="age" type="number" required min="13" max="99" placeholder="18"></label><label class="wide"><span>In-game Name</span><input name="inGameName" required maxlength="80" placeholder="Your Arma Reforger character name"></label><label class="wide"><span>Prior Experience</span><textarea name="priorExperience" required maxlength="1500" placeholder="Describe your previous law-enforcement or roleplay experience."></textarea></label><label class="wide"><span>Why Glenwood?</span><textarea name="whyGlenwood" required maxlength="1500" placeholder="Why do you want to join the Glenwood Sheriff's Department?"></textarea></label></div>
+          <label class="consent"><input type="checkbox" required><span>I confirm this information is accurate and understand staff will review my application.</span></label><button class="button gold submit-button" type="submit">Submit application <b>→</b></button><output class="form-message" aria-live="polite"></output>
+        </form>
+        <form class="public-form" id="incident-form" data-submission-type="incident" novalidate>
+          <div class="form-heading"><span>02</span><div><h3>Civilian Incident Report</h3><p>Provide a clear factual account for department review.</p></div></div>
+          <div class="field-grid"><label><span>Date</span><input name="date" type="date" required></label><label><span>Location</span><input name="location" required maxlength="160" placeholder="Road, town, or landmark"></label><label class="wide"><span>Description of Incident</span><textarea name="incidentDescription" required maxlength="1800" placeholder="Explain what happened in chronological order."></textarea></label><label class="wide"><span>Suspect Description</span><textarea name="suspectDescription" required maxlength="1200" placeholder="Appearance, clothing, vehicle, direction of travel, or other identifying details."></textarea></label></div>
+          <label class="consent"><input type="checkbox" required><span>I confirm this report is truthful to the best of my knowledge.</span></label><button class="button gold submit-button" type="submit">Submit incident report <b>→</b></button><output class="form-message" aria-live="polite"></output>
+        </form>
+      </div>
+    </section>
+
+    <section class="cta section-shell"><div><p class="eyebrow">ANSWER THE CALL</p><h2>Ready to serve Glenwood?</h2><p>Join a department built around strong scenes, fair policing, and community-first roleplay.</p></div><a class="button gold" href="#records">Apply now</a>
+      <!-- OPTIONAL LOOPING GIF: replace with assets/radar-sweep.gif for a custom transparent radar animation -->
+      <img class="gif-placeholder radar-gif" src="assets/background.gif" alt="Animated tactical radar sweep">
+    </section>
+  </main>
+
+  <footer><a class="brand compact" href="#top"><img src="assets/crest.png" alt=""><span><strong>GLENWOOD</strong><small>SHERIFF'S DEPARTMENT</small></span></a><p>Arma Reforger roleplay community portal · Not affiliated with a real law-enforcement agency.</p><button class="text-button staff-login" type="button">Staff Login</button></footer>
+  <div class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
