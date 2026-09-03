@@ -89,13 +89,16 @@ function renderNavigation() {
   ).join('');
   document.querySelectorAll('[data-template]').forEach((button) => button.addEventListener('click', () => openTemplate(button.dataset.template)));
   document.querySelector('[data-view="dashboard"]').addEventListener('click', renderDashboard);
+  document.querySelector('[data-view="admin"]').addEventListener('click', renderAdmin);
 }
 
 function updateActive() {
   document.querySelectorAll('.nav-item').forEach((element) => element.classList.remove('active'));
   const active = currentView === 'dashboard'
     ? document.querySelector('[data-view="dashboard"]')
-    : document.querySelector(`[data-template="${currentTemplate}"]`);
+    : currentView === 'admin'
+      ? document.querySelector('[data-view="admin"]')
+      : document.querySelector(`[data-template="${currentTemplate}"]`);
   active?.classList.add('active');
   sidebar.classList.remove('sidebar-open');
   document.querySelector('#mobile-scrim').classList.remove('show');
@@ -127,6 +130,65 @@ function renderDashboard() {
 function draftRow(draft) {
   const template = templates[draft.template] || templates.incident;
   return `<article class="draft-row"><span class="draft-icon">${template.icon}</span><div class="draft-copy"><strong>${escapeHtml(draft.title)}</strong><span>${escapeHtml(draft.reference || 'No reference')} · ${escapeHtml(draft.officer || 'Officer not entered')}</span></div><time>${escapeHtml(draft.updatedLabel)}</time><button class="row-button" data-open="${draft.id}">Open</button><button class="delete-button" data-delete="${draft.id}" aria-label="Delete ${escapeHtml(draft.title)}">×</button></article>`;
+}
+
+function renderAdmin() {
+  currentView = 'admin';
+  currentDraftId = null;
+  updateActive();
+  pageTitle.textContent = 'Admin Console';
+  breadcrumb.textContent = 'Administration / Grizzly';
+  saveButton.hidden = true;
+  printButton.hidden = true;
+  const all = drafts();
+  const certified = all.filter((draft) => draft.certified).length;
+  const latest = all.length ? all.sort((a, b) => b.updated - a.updated)[0].updatedLabel : 'No activity';
+  content.innerHTML = `
+    <section class="admin-banner"><div><p class="kicker">AUTHORIZED ADMINISTRATOR</p><h2>Welcome, Grizzly</h2><p>Manage this device’s Glenwood paperwork workspace and local records.</p></div><span class="admin-mark">G</span></section>
+    <div class="admin-grid"><div class="admin-stat"><span>Role</span><strong>Administrator</strong></div><div class="admin-stat"><span>Local drafts</span><strong>${all.length}</strong></div><div class="admin-stat"><span>Certified</span><strong>${certified}</strong></div></div>
+    <section class="admin-tools">
+      <article class="admin-tool-card"><h3>Export local records</h3><p>Download all saved report drafts as a portable JSON backup.</p><button class="gold-button" id="export-drafts">⇩ Export drafts</button></article>
+      <article class="admin-tool-card"><h3>Import a backup</h3><p>Restore drafts from a Glenwood paperwork JSON backup file.</p><label class="import-label">⇧ Choose backup<input id="import-drafts" type="file" accept="application/json,.json"></label></article>
+      <article class="admin-tool-card"><h3>Review records</h3><p>Return to the dashboard to search, open, print, or remove saved reports.</p><button class="glass-button" id="review-drafts">Open dashboard</button></article>
+      <article class="admin-tool-card"><h3>Clear local records</h3><p>Delete every saved draft from this browser on this device.</p><button class="danger-button" id="clear-drafts">Clear all drafts</button></article>
+    </section>
+    <p class="admin-note">Administrator role: Grizzly · Last local activity: ${escapeHtml(latest)}. This static GitHub Pages version stores data only in the browser and does not provide server-enforced sign-in security.</p>`;
+  document.querySelector('#export-drafts').addEventListener('click', exportDrafts);
+  document.querySelector('#import-drafts').addEventListener('change', importDrafts);
+  document.querySelector('#review-drafts').addEventListener('click', renderDashboard);
+  document.querySelector('#clear-drafts').addEventListener('click', clearAllDrafts);
+}
+
+function exportDrafts() {
+  const payload = JSON.stringify({ version: 1, exportedBy: 'Grizzly', exportedAt: new Date().toISOString(), drafts: drafts() }, null, 2);
+  const url = URL.createObjectURL(new Blob([payload], { type: 'application/json' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `glenwood-paperwork-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+  showToast('Local records exported');
+}
+
+async function importDrafts(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  try {
+    const payload = JSON.parse(await file.text());
+    if (!Array.isArray(payload.drafts)) throw new Error('Invalid backup');
+    setDrafts(payload.drafts.filter((draft) => draft && templates[draft.template]));
+    renderAdmin();
+    showToast('Backup restored');
+  } catch {
+    showToast('That backup file is not valid');
+  }
+}
+
+function clearAllDrafts() {
+  if (!confirm('Administrator Grizzly: permanently clear every local draft on this device?')) return;
+  setDrafts([]);
+  renderAdmin();
+  showToast('All local drafts cleared');
 }
 
 function openTemplate(key, values = {}, id = null) {
