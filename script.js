@@ -1,4 +1,4 @@
-/* ========================================================================== 
+/* ===========================================================================
    GLENWOOD CONFIGURATION — replace these placeholders before production use.
    Never commit a real webhook URL to a public repository. A tiny serverless
    proxy is recommended for production so the webhook remains private.
