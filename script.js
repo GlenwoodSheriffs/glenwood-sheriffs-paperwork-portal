@@ -256,7 +256,7 @@ async function consumeDiscordOAuth() {
     if (!response.ok) throw new Error('Could not load Discord profile');
     const user = await response.json();
     const admins = configuredAdminIds();
-    if (!admins.length) return { error: "Grizzly's Discord user ID has not been added to the MDT allowlist yet." };
+    if (!admins.length) return { error: `Grizzly's Discord user ID has not been added yet. Your signed-in Discord user ID is ${user.id}.` };
     if (!admins.includes(user.id)) return { error: 'This Discord account is not authorized for the Glenwood MDT.' };
     const avatarUrl = user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128` : 'assets/crest.png';
     const profile = { id: user.id, username: user.global_name || user.username, avatarUrl, role: 'Administrator', demo: false, expiresAt: Date.now() + Number(params.get('expires_in') || 3600) * 1000 };
