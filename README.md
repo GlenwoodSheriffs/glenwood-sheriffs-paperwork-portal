@@ -17,7 +17,7 @@ Open `script.js` and replace the clearly marked values at the top:
 2. `DISCORD_REDIRECT_URI`
 3. `EMPLOYMENT_WEBHOOK_URL`
 4. `INCIDENT_WEBHOOK_URL`
-5. `ADMIN_DISCORD_USER_IDS` — add Grizzly's Discord user ID
+5. `ADMIN_DISCORD_USER_IDS` — configured for Grizzly's Discord account
 
 In the Discord Developer Portal, add this exact OAuth2 redirect:
 

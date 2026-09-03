@@ -8,7 +8,7 @@ const CONFIG = {
   DISCORD_REDIRECT_URI: 'https://shadowrp-cad.github.io/glenwood-sheriffs-paperwork-portal/dashboard.html',
   EMPLOYMENT_WEBHOOK_URL: 'PASTE_EMPLOYMENT_WEBHOOK_URL_HERE',
   INCIDENT_WEBHOOK_URL: 'PASTE_INCIDENT_WEBHOOK_URL_HERE',
-  ADMIN_DISCORD_USER_IDS: ['PASTE_GRIZZLY_DISCORD_USER_ID_HERE'],
+  ADMIN_DISCORD_USER_IDS: ['1463057608276705280'], // Grizzly
   SERVER_STATUS_ENDPOINT: '', // Optional HTTPS endpoint returning { online, players, maxPlayers }.
 };
 
