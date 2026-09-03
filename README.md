@@ -25,7 +25,7 @@ In the Discord Developer Portal, add this exact OAuth2 redirect:
 https://shadowrp-cad.github.io/glenwood-sheriffs-paperwork-portal/dashboard.html
 ```
 
-Set `DEMO_ADMIN_ENABLED` to `false` after OAuth is configured.
+The Grizzly demo login is automatically available on localhost for testing and hidden on GitHub Pages.
 
 ## Optional server status
 

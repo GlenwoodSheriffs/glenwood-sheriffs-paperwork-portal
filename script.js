@@ -10,7 +10,8 @@ const CONFIG = {
   INCIDENT_WEBHOOK_URL: 'PASTE_INCIDENT_WEBHOOK_URL_HERE',
   ADMIN_DISCORD_USER_IDS: ['PASTE_GRIZZLY_DISCORD_USER_ID_HERE'],
   SERVER_STATUS_ENDPOINT: '', // Optional HTTPS endpoint returning { online, players, maxPlayers }.
-  DEMO_ADMIN_ENABLED: true, // Set false after Discord OAuth and Grizzly's user ID are configured.
+  // Demo access is available only on localhost; it is never exposed on GitHub Pages.
+  DEMO_ADMIN_ENABLED: ['localhost', '127.0.0.1'].includes(window.location.hostname),
 };
 
 const STORAGE = {
@@ -223,7 +224,9 @@ async function updateServerStatus() {
 async function initDashboard() {
   bindStaffLogin();
   const loginMessage = document.querySelector('#login-message');
-  document.querySelector('#demo-login')?.addEventListener('click', () => {
+  const demoLogin = document.querySelector('#demo-login');
+  if (demoLogin) demoLogin.hidden = !CONFIG.DEMO_ADMIN_ENABLED;
+  demoLogin?.addEventListener('click', () => {
     if (!CONFIG.DEMO_ADMIN_ENABLED) return;
     const profile = { id: 'demo-grizzly', username: 'Grizzly', avatarUrl: 'assets/crest.png', role: 'Administrator', demo: true, expiresAt: Date.now() + 86400000 };
     localStorage.setItem(STORAGE.adminProfile, JSON.stringify(profile));
