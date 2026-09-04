@@ -14,6 +14,9 @@ const CONFIG = {
     '867896568916607000': 'GSD · Administrator',
     '1305615846529564693': 'Undersheriff · Administrator',
   },
+  SHERIFF_TITLES: {
+    '906582016445808660': 'Deputy',
+  },
   SERVER_STATUS_ENDPOINT: '', // Optional HTTPS endpoint returning { online, players, maxPlayers }.
 };
 
@@ -110,6 +113,10 @@ function configuredAdminIds() {
 
 function adminTitle(userId) {
   return CONFIG.ADMIN_TITLES[userId] || 'Administrator';
+}
+
+function sheriffTitle(userId) {
+  return CONFIG.SHERIFF_TITLES[userId] || 'Sheriff';
 }
 
 function beginDiscordLogin() {
@@ -443,7 +450,7 @@ function showDashboard(profile) {
   document.body.classList.toggle('role-admin', admin);
   document.body.classList.toggle('role-sheriff', !admin);
   document.querySelectorAll('.mdt-nav.admin-only').forEach((element) => { element.hidden = !admin; });
-  setText('#admin-role', admin ? adminTitle(profile.id).toUpperCase() : 'SHERIFF');
+  setText('#admin-role', admin ? adminTitle(profile.id).toUpperCase() : sheriffTitle(profile.id).toUpperCase());
   setText('#clearance-level', admin ? 'ADMIN' : 'SHERIFF');
   setText('#clearance-message', admin ? 'COMMAND ACCESS GRANTED' : 'DEPARTMENT ACCESS GRANTED');
   setText('#welcome-description', admin ? 'Review submissions, authorize warrants, and maintain department workflow.' : 'File reports and warrants, manage active operations, and view command decisions.');
