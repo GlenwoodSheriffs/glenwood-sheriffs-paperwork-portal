@@ -20,6 +20,8 @@ const CONFIG = {
     '1198702288605286411': 'Cadet',
     '1374783798776168570': 'Cadet',
     '1341983401913094257': 'Cadet',
+    '907410535480459294': 'Cadet',
+    '1156420986195939399': 'Cadet',
   },
   SERVER_STATUS_ENDPOINT: '', // Optional HTTPS endpoint returning { online, players, maxPlayers }.
 };
