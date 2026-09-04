@@ -24,7 +24,7 @@ In the Discord Developer Portal, add this exact OAuth2 redirect:
 https://glenwoodsheriffs.github.io/glenwood-sheriffs-paperwork-portal/dashboard.html
 ```
 
-The staff dashboard can only be entered through Discord OAuth. Grizzly's Discord user ID receives Administrator clearance. Other authenticated users receive Sheriff clearance: they can file reports and warrants and use operational tools, but only administrators can approve or deny records and warrants or open administrative data tools.
+The staff dashboard can only be entered through Discord OAuth. The configured command IDs for Grizzly, the Chief, and GSD command receive Administrator clearance. Other authenticated users receive Sheriff clearance: they can file reports and warrants and use operational tools, but only administrators can approve or deny records and warrants or open administrative data tools.
 
 ## Optional server status
 

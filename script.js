@@ -7,7 +7,13 @@ const CONFIG = {
   DISCORD_CLIENT_ID: '1545198908026658908',
   DISCORD_REDIRECT_URI: 'https://glenwoodsheriffs.github.io/glenwood-sheriffs-paperwork-portal/dashboard.html',
   INCIDENT_WEBHOOK_URL: 'PASTE_INCIDENT_WEBHOOK_URL_HERE',
-  ADMIN_DISCORD_USER_IDS: ['1463057608276705280'], // Grizzly
+  ADMIN_DISCORD_USER_IDS: ['1463057608276705280', '1321672140952571924', '867896568916607000', '1305615846529564693'],
+  ADMIN_TITLES: {
+    '1463057608276705280': 'Sheriff · Administrator',
+    '1321672140952571924': 'Chief · Administrator',
+    '867896568916607000': 'GSD · Administrator',
+    '1305615846529564693': 'Undersheriff · Administrator',
+  },
   SERVER_STATUS_ENDPOINT: '', // Optional HTTPS endpoint returning { online, players, maxPlayers }.
 };
 
@@ -100,6 +106,10 @@ function isConfigured(value) {
 
 function configuredAdminIds() {
   return CONFIG.ADMIN_DISCORD_USER_IDS.filter((id) => isConfigured(id));
+}
+
+function adminTitle(userId) {
+  return CONFIG.ADMIN_TITLES[userId] || 'Administrator';
 }
 
 function beginDiscordLogin() {
@@ -429,10 +439,11 @@ function showDashboard(profile) {
   document.querySelector('#admin-avatar').src = profile.avatarUrl;
   const admin = profile.role === 'Administrator' && configuredAdminIds().includes(profile.id);
   profile.role = admin ? 'Administrator' : 'Sheriff';
+  localStorage.setItem(STORAGE.adminProfile, JSON.stringify(profile));
   document.body.classList.toggle('role-admin', admin);
   document.body.classList.toggle('role-sheriff', !admin);
   document.querySelectorAll('.mdt-nav.admin-only').forEach((element) => { element.hidden = !admin; });
-  setText('#admin-role', admin ? 'ADMINISTRATOR' : 'SHERIFF');
+  setText('#admin-role', admin ? adminTitle(profile.id).toUpperCase() : 'SHERIFF');
   setText('#clearance-level', admin ? 'ADMIN' : 'SHERIFF');
   setText('#clearance-message', admin ? 'COMMAND ACCESS GRANTED' : 'DEPARTMENT ACCESS GRANTED');
   setText('#welcome-description', admin ? 'Review submissions, authorize warrants, and maintain department workflow.' : 'File reports and warrants, manage active operations, and view command decisions.');
