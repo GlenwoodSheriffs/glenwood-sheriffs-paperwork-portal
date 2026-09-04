@@ -450,7 +450,7 @@ function showDashboard(profile) {
   document.querySelector('#admin-name').textContent = profile.username;
   document.querySelector('#welcome-name').textContent = profile.username;
   document.querySelector('#admin-avatar').src = profile.avatarUrl;
-  const admin = profile.role === 'Administrator' && configuredAdminIds().includes(profile.id);
+  const admin = configuredAdminIds().includes(profile.id);
   profile.role = admin ? 'Administrator' : 'Sheriff';
   localStorage.setItem(STORAGE.adminProfile, JSON.stringify(profile));
   document.body.classList.toggle('role-admin', admin);
