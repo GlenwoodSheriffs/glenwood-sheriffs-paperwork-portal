@@ -16,6 +16,9 @@ const CONFIG = {
   },
   SHERIFF_TITLES: {
     '906582016445808660': 'Deputy',
+    '1198702288605286411': 'Cadet',
+    '1374783798776168570': 'Cadet',
+    '1341983401913094257': 'Cadet',
   },
   SERVER_STATUS_ENDPOINT: '', // Optional HTTPS endpoint returning { online, players, maxPlayers }.
 };
