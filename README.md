@@ -5,7 +5,7 @@ A fully static, animated Arma Reforger roleplay community portal built with vani
 ## Included pages
 
 - `index.html` — Discord-gated landing page, department information, roster, server status, and sheriff incident reporting
-- `dashboard.html` — Discord-connected MDT, records review, dispatch board, and BOLO network
+- `dashboard.html` — Discord-connected MDT with role permissions, warrant filing, records review, dispatch, and BOLOs
 - `style.css` — responsive tactical design and animation system
 - `script.js` — Discord OAuth, webhook delivery, local caching, and administrative review actions
 
@@ -24,7 +24,7 @@ In the Discord Developer Portal, add this exact OAuth2 redirect:
 https://glenwoodsheriffs.github.io/glenwood-sheriffs-paperwork-portal/dashboard.html
 ```
 
-The staff dashboard can only be entered through Discord OAuth. Add Grizzly's Discord user ID to the admin allowlist before publishing credentials.
+The staff dashboard can only be entered through Discord OAuth. Grizzly's Discord user ID receives Administrator clearance. Other authenticated users receive Sheriff clearance: they can file reports and warrants and use operational tools, but only administrators can approve or deny records and warrants or open administrative data tools.
 
 ## Optional server status
 

@@ -7,8 +7,8 @@
   <meta name="robots" content="noindex,nofollow">
   <title>GSD Mobile Data Terminal</title>
   <link rel="icon" href="assets/crest.png">
-  <link rel="stylesheet" href="style.css?v=12">
-  <script src="script.js?v=12" defer></script>
+  <link rel="stylesheet" href="style.css?v=13">
+  <script src="script.js?v=13" defer></script>
 </head>
 <body data-page="dashboard" class="mdt-body">
   <div class="site-background dashboard-bg" aria-hidden="true"></div><div class="tactical-grid" aria-hidden="true"></div><div class="scanline" aria-hidden="true"></div>
@@ -20,18 +20,24 @@
   <div class="mdt-app" id="mdt-app" hidden>
     <aside class="mdt-sidebar">
       <a class="brand" href="index.html"><img src="assets/crest.png" alt=""><span><strong>GSD · MDT</strong><small>SECURE OPERATIONS</small></span></a>
-      <nav><button class="mdt-nav active" data-panel="review"><span>▤</span> Records Desk</button><button class="mdt-nav" data-panel="dispatch"><span>⌁</span> Dispatch Board <i id="nav-call-count">0</i></button><button class="mdt-nav" data-panel="bolo"><span>◎</span> BOLO Network <i id="nav-bolo-count">0</i></button><button class="mdt-nav" data-panel="analytics"><span>▦</span> Administration</button><a class="mdt-nav" href="index.html"><span>←</span> Department Portal</a></nav>
+      <nav><button class="mdt-nav active" data-panel="review"><span>▤</span> Records Desk</button><button class="mdt-nav" data-panel="warrants"><span>⚖</span> Warrant Desk <i id="nav-warrant-count">0</i></button><button class="mdt-nav" data-panel="dispatch"><span>⌁</span> Dispatch Board <i id="nav-call-count">0</i></button><button class="mdt-nav" data-panel="bolo"><span>◎</span> BOLO Network <i id="nav-bolo-count">0</i></button><button class="mdt-nav admin-only" data-panel="analytics"><span>▦</span> Administration</button><a class="mdt-nav" href="index.html"><span>←</span> Department Portal</a></nav>
       <div class="terminal-status"><span class="online-beacon"></span><div><b>TERMINAL ONLINE</b><small>Local records connection</small></div></div>
     </aside>
 
     <main class="mdt-main">
-      <header class="mdt-header"><button class="mdt-mobile-toggle" type="button" aria-label="Toggle MDT menu">☰</button><div><p class="eyebrow">GLENWOOD SHERIFF'S DEPARTMENT</p><h1 id="mdt-panel-title">Records Desk</h1></div><div class="mdt-clock"><small>LOCAL TIME</small><strong id="mdt-clock">--:--:--</strong></div><div class="admin-identity"><img id="admin-avatar" src="assets/crest.png" alt="Administrator avatar"><span><small>ADMINISTRATOR</small><strong id="admin-name">Grizzly</strong></span><button id="logout-button" type="button" title="Log out">↪</button></div></header>
+      <header class="mdt-header"><button class="mdt-mobile-toggle" type="button" aria-label="Toggle MDT menu">☰</button><div><p class="eyebrow">GLENWOOD SHERIFF'S DEPARTMENT</p><h1 id="mdt-panel-title">Records Desk</h1></div><div class="mdt-clock"><small>LOCAL TIME</small><strong id="mdt-clock">--:--:--</strong></div><div class="admin-identity"><img id="admin-avatar" src="assets/crest.png" alt="Signed-in sheriff avatar"><span><small id="admin-role">SHERIFF</small><strong id="admin-name">Deputy</strong></span><button id="logout-button" type="button" title="Log out">↪</button></div></header>
 
       <section class="mdt-content" id="review-panel">
-        <div class="welcome-banner"><div><p class="eyebrow">COMMAND ACCESS GRANTED</p><h2>Welcome back, <span id="welcome-name">Grizzly</span>.</h2><p>Review public submissions, record decisions, and maintain department workflow.</p></div><div class="clearance"><span>LEVEL</span><strong>ADMIN</strong></div></div>
+        <div class="welcome-banner"><div><p class="eyebrow" id="clearance-message">DEPARTMENT ACCESS GRANTED</p><h2>Welcome back, <span id="welcome-name">Deputy</span>.</h2><p id="welcome-description">File operational records and maintain department workflow.</p></div><div class="clearance"><span>LEVEL</span><strong id="clearance-level">SHERIFF</strong></div></div>
         <div class="metric-grid"><article><span>TOTAL SUBMISSIONS</span><strong id="metric-total">0</strong><small>Local browser archive</small></article><article><span>PENDING REVIEW</span><strong id="metric-pending">0</strong><small>Awaiting command action</small></article><article><span>APPROVED</span><strong id="metric-approved">0</strong><small>Accepted paperwork</small></article><article><span>DENIED</span><strong id="metric-denied">0</strong><small>Declined paperwork</small></article></div>
         <div class="review-toolbar"><div><p class="eyebrow">SECURE INBOX</p><h2>Paperwork Review Desk</h2></div><label class="mdt-search">⌕<input id="submission-search" placeholder="Search reporter, location, or ID"></label><div class="filter-group" role="group" aria-label="Submission filters"><button class="filter active" data-filter="all">All</button><button class="filter" data-filter="pending">Pending</button><button class="filter" data-filter="approved">Approved</button><button class="filter" data-filter="denied">Denied</button></div></div>
         <div class="submission-list" id="submission-list"></div>
+      </section>
+
+      <section class="mdt-content" id="warrants-panel" hidden>
+        <div class="workspace-heading"><div><p class="eyebrow">JUDICIAL REQUEST SYSTEM</p><h2>Warrant desk</h2><p>Sheriffs may file arrest and search-warrant requests. Command staff reviews final authorization.</p></div><button class="button gold" type="button" data-open-composer="warrant">+ File warrant</button></div>
+        <div class="warrant-summary"><article><span>◷</span><div><small>PENDING COMMAND REVIEW</small><b id="warrants-pending">0</b></div></article><article><span>✓</span><div><small>APPROVED</small><b id="warrants-approved">0</b></div></article><article><span>×</span><div><small>DENIED</small><b id="warrants-denied">0</b></div></article></div>
+        <div class="warrant-list" id="warrant-list"></div>
       </section>
 
       <section class="mdt-content" id="dispatch-panel" hidden>

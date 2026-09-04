@@ -19,6 +19,7 @@ const STORAGE = {
   oauthReturn: 'gsd_discord_oauth_return_v2',
   calls: 'gsd_dispatch_calls_v1',
   bolos: 'gsd_bolo_records_v1',
+  warrants: 'gsd_warrant_records_v1',
   activity: 'gsd_activity_log_v1',
   arrestDraft: 'gsd_arrest_report_draft_v1',
 };
@@ -378,8 +379,9 @@ async function initDashboard() {
   document.querySelector('#composer-form')?.addEventListener('submit', saveComposerRecord);
   document.querySelector('#dispatch-list')?.addEventListener('click', handleDispatchAction);
   document.querySelector('#bolo-list')?.addEventListener('click', handleBoloAction);
+  document.querySelector('#warrant-list')?.addEventListener('click', handleWarrantAction);
   const requestedPanel = location.hash.slice(1);
-  if (['dispatch', 'bolo', 'analytics'].includes(requestedPanel)) switchAdminPanel(requestedPanel);
+  if (['dispatch', 'bolo', 'warrants', 'analytics'].includes(requestedPanel)) switchAdminPanel(requestedPanel);
 }
 
 async function consumeDiscordOAuth() {
@@ -396,10 +398,8 @@ async function consumeDiscordOAuth() {
     if (!response.ok) throw new Error('Could not load Discord profile');
     const user = await response.json();
     const admins = configuredAdminIds();
-    if (!admins.length) return { error: `Grizzly's Discord user ID has not been added yet. Your signed-in Discord user ID is ${user.id}.` };
-    if (!admins.includes(user.id)) return { error: 'This Discord account is not authorized for the Glenwood MDT.' };
     const avatarUrl = user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128` : 'assets/crest.png';
-    const profile = { id: user.id, username: user.global_name || user.username, avatarUrl, role: 'Administrator', demo: false, expiresAt: Date.now() + Number(params.get('expires_in') || 3600) * 1000 };
+    const profile = { id: user.id, username: user.global_name || user.username, avatarUrl, role: admins.includes(user.id) ? 'Administrator' : 'Sheriff', demo: false, expiresAt: Date.now() + Number(params.get('expires_in') || 3600) * 1000 };
     localStorage.setItem(STORAGE.adminProfile, JSON.stringify(profile));
     sessionStorage.setItem(STORAGE.oauthToken, token);
     return { profile };
@@ -427,7 +427,17 @@ function showDashboard(profile) {
   document.querySelector('#admin-name').textContent = profile.username;
   document.querySelector('#welcome-name').textContent = profile.username;
   document.querySelector('#admin-avatar').src = profile.avatarUrl;
+  const admin = profile.role === 'Administrator' && configuredAdminIds().includes(profile.id);
+  profile.role = admin ? 'Administrator' : 'Sheriff';
+  document.body.classList.toggle('role-admin', admin);
+  document.body.classList.toggle('role-sheriff', !admin);
+  document.querySelectorAll('.mdt-nav.admin-only').forEach((element) => { element.hidden = !admin; });
+  setText('#admin-role', admin ? 'ADMINISTRATOR' : 'SHERIFF');
+  setText('#clearance-level', admin ? 'ADMIN' : 'SHERIFF');
+  setText('#clearance-message', admin ? 'COMMAND ACCESS GRANTED' : 'DEPARTMENT ACCESS GRANTED');
+  setText('#welcome-description', admin ? 'Review submissions, authorize warrants, and maintain department workflow.' : 'File reports and warrants, manage active operations, and view command decisions.');
   renderSubmissions();
+  renderWarrants();
   renderDispatch();
   renderBolos();
   updateMetrics();
@@ -464,19 +474,26 @@ function initTacticalCursor() {
 }
 
 function switchAdminPanel(panel) {
-  ['review', 'dispatch', 'bolo', 'analytics'].forEach((name) => {
+  if (panel === 'analytics' && !isAdmin()) panel = 'review';
+  ['review', 'warrants', 'dispatch', 'bolo', 'analytics'].forEach((name) => {
     const element = document.querySelector(`#${name}-panel`);
     if (element) element.hidden = name !== panel;
   });
   document.querySelectorAll('.mdt-nav[data-panel]').forEach((button) => button.classList.toggle('active', button.dataset.panel === panel));
-  const titles = { review: 'Records Desk', dispatch: 'Dispatch Board', bolo: 'BOLO Network', analytics: 'Administration' };
+  const titles = { review: 'Records Desk', warrants: 'Warrant Desk', dispatch: 'Dispatch Board', bolo: 'BOLO Network', analytics: 'Administration' };
   const panelTitle = document.querySelector('#mdt-panel-title');
   if (panelTitle) panelTitle.textContent = titles[panel] || 'Command Center';
   history.replaceState(null, '', panel === 'review' ? location.pathname : `#${panel}`);
   document.querySelector('.mdt-sidebar').classList.remove('open');
   if (panel === 'review') renderSubmissions();
+  if (panel === 'warrants') renderWarrants();
   if (panel === 'dispatch') renderDispatch();
   if (panel === 'bolo') renderBolos();
+}
+
+function isAdmin() {
+  const profile = readAdminProfile();
+  return Boolean(profile && profile.role === 'Administrator' && configuredAdminIds().includes(profile.id));
 }
 
 function updateMetrics() {
@@ -503,13 +520,15 @@ function renderSubmissions(filter = 'all', query = '') {
 function submissionCard(record) {
   const title = record.type === 'arrest' ? 'Arrest Report' : 'Sheriff Incident Report';
   const summary = record.fields.arresteeName || record.fields.location;
-  return `<article class="submission-card"><span class="submission-type">${record.type === 'arrest' ? 'AR' : '!'}</span><div class="submission-copy"><strong>${escapeHtml(title)} · ${escapeHtml(record.id)}</strong><span>${escapeHtml(summary || 'No summary')} · ${new Date(record.submittedAt).toLocaleString()}</span></div><div class="submission-actions"><span class="status-tag ${record.status}">${record.status}</span><button class="small-action view" data-action="view" data-id="${record.id}">View</button><button class="small-action approve" data-action="approved" data-id="${record.id}">Approve</button><button class="small-action deny" data-action="denied" data-id="${record.id}">Deny</button></div></article>`;
+  const reviewActions = isAdmin() ? `<button class="small-action approve" data-action="approved" data-id="${record.id}">Approve</button><button class="small-action deny" data-action="denied" data-id="${record.id}">Deny</button>` : '';
+  return `<article class="submission-card"><span class="submission-type">${record.type === 'arrest' ? 'AR' : '!'}</span><div class="submission-copy"><strong>${escapeHtml(title)} · ${escapeHtml(record.id)}</strong><span>${escapeHtml(summary || 'No summary')} · ${new Date(record.submittedAt).toLocaleString()}</span></div><div class="submission-actions"><span class="status-tag ${record.status}">${record.status}</span><button class="small-action view" data-action="view" data-id="${record.id}">View</button>${reviewActions}</div></article>`;
 }
 
 function handleSubmissionAction(event) {
   const button = event.target.closest('[data-action]');
   if (!button) return;
   if (button.dataset.action === 'view') return openSubmission(button.dataset.id);
+  if (!isAdmin()) return showToast('Administrator clearance is required to review reports', 'warning');
   const records = readSubmissions();
   const record = records.find((item) => item.id === button.dataset.id);
   if (!record) return;
@@ -562,6 +581,7 @@ async function handleReportDialogAction(event) {
 }
 
 function exportRecords() {
+  if (!isAdmin()) return showToast('Administrator clearance is required', 'warning');
   const payload = JSON.stringify({ version: 2, exportedBy: readAdminProfile()?.username || 'Grizzly', exportedAt: new Date().toISOString(), submissions: readSubmissions() }, null, 2);
   const url = URL.createObjectURL(new Blob([payload], { type: 'application/json' }));
   const link = document.createElement('a');
@@ -573,6 +593,7 @@ function exportRecords() {
 }
 
 async function importRecords(event) {
+  if (!isAdmin()) return showToast('Administrator clearance is required', 'warning');
   const file = event.target.files?.[0];
   if (!file) return;
   try {
@@ -587,6 +608,7 @@ async function importRecords(event) {
 }
 
 function clearRecords() {
+  if (!isAdmin()) return showToast('Administrator clearance is required', 'warning');
   if (!confirm('Administrator action: permanently clear every local public submission from this browser?')) return;
   writeSubmissions([]);
   updateMetrics();
@@ -594,6 +616,10 @@ function clearRecords() {
 }
 
 const COMPOSERS = {
+  warrant: {
+    title: 'File warrant request', eyebrow: 'JUDICIAL REQUEST SYSTEM',
+    fields: `<div class="composer-grid"><label><span>Warrant Type</span><select name="warrantType" required><option>Arrest Warrant</option><option>Search Warrant</option></select></label><label><span>Priority</span><select name="priority" required><option>Routine</option><option>Urgent</option><option>High Risk</option></select></label><label><span>Subject Name</span><input name="subject" required maxlength="100" placeholder="Full roleplay name"></label><label><span>Gamertag / Alias</span><input name="gamertag" maxlength="100" placeholder="Known gamertag or alias"></label><label class="wide"><span>Search Location / Last Known Address</span><input name="location" required maxlength="180" placeholder="Property, vehicle, grid, or last known location"></label><label class="wide"><span>Charges / Items Sought</span><textarea name="charges" required maxlength="1200" placeholder="List alleged charges or the evidence/items being sought"></textarea></label><label class="wide"><span>Probable Cause Statement</span><textarea name="probableCause" required maxlength="2400" placeholder="Explain the facts establishing probable cause. Include related case numbers and evidence."></textarea></label><label><span>Requesting Officer</span><input name="requestingOfficer" required maxlength="80" placeholder="Officer name"></label><label><span>Badge Number</span><input name="badgeNumber" required maxlength="20" placeholder="19010"></label></div>`,
+  },
   call: {
     title: 'Create dispatch call', eyebrow: 'COMPUTER-AIDED DISPATCH',
     fields: `<div class="composer-grid"><label><span>Call Type</span><input name="title" required maxlength="80" placeholder="Traffic collision, disturbance…"></label><label><span>Priority</span><select name="priority" required><option>Priority 3</option><option>Priority 2</option><option>Priority 1</option></select></label><label class="wide"><span>Location</span><input name="location" required maxlength="140" placeholder="Road, town, grid, or landmark"></label><label><span>Assigned Unit</span><input name="unit" maxlength="40" placeholder="Unassigned"></label><label><span>Caller / Source</span><input name="source" maxlength="80" placeholder="Dispatch, civilian, unit…"></label><label class="wide"><span>Call Notes</span><textarea name="notes" required maxlength="1200" placeholder="Known facts and officer-safety information"></textarea></label></div>`,
@@ -622,14 +648,47 @@ function saveComposerRecord(event) {
   if (!form.checkValidity()) return form.reportValidity();
   const type = form.dataset.type;
   const fields = Object.fromEntries(new FormData(form).entries());
-  const key = type === 'call' ? STORAGE.calls : STORAGE.bolos;
+  const key = type === 'call' ? STORAGE.calls : type === 'bolo' ? STORAGE.bolos : STORAGE.warrants;
   const records = readCollection(key);
-  records.unshift({ id: makeId(type === 'call' ? 'CAD' : 'BOLO'), ...fields, status: 'active', createdAt: new Date().toISOString(), createdBy: readAdminProfile()?.username || 'Grizzly' });
+  const prefix = type === 'call' ? 'CAD' : type === 'bolo' ? 'BOLO' : 'WRNT';
+  records.unshift({ id: makeId(prefix), ...fields, status: type === 'warrant' ? 'pending' : 'active', createdAt: new Date().toISOString(), createdBy: readAdminProfile()?.username || 'Sheriff', createdById: readAdminProfile()?.id || '' });
   writeCollection(key, records);
-  logActivity(type === 'call' ? 'Dispatch call created' : 'BOLO published', type === 'call' ? fields.title : fields.subject);
+  logActivity(type === 'call' ? 'Dispatch call created' : type === 'bolo' ? 'BOLO published' : 'Warrant filed', type === 'call' ? fields.title : fields.subject);
   document.querySelector('#composer-dialog').close();
-  type === 'call' ? renderDispatch() : renderBolos();
-  showToast(type === 'call' ? 'Call added to dispatch board' : 'BOLO published to network');
+  if (type === 'call') renderDispatch();
+  else if (type === 'bolo') renderBolos();
+  else renderWarrants();
+  showToast(type === 'call' ? 'Call added to dispatch board' : type === 'bolo' ? 'BOLO published to network' : 'Warrant submitted for command review');
+}
+
+function renderWarrants() {
+  const list = document.querySelector('#warrant-list');
+  const warrants = readCollection(STORAGE.warrants);
+  const admin = isAdmin();
+  if (list) list.innerHTML = warrants.length ? warrants.map((warrant) => {
+    const actions = admin && warrant.status === 'pending' ? `<button class="small-action approve" data-warrant-action="approved" data-id="${warrant.id}">Approve</button><button class="small-action deny" data-warrant-action="denied" data-id="${warrant.id}">Deny</button>` : '';
+    return `<article class="warrant-card"><div class="warrant-seal">⚖</div><div class="warrant-copy"><small>${escapeHtml(warrant.id)} · ${escapeHtml(warrant.warrantType)}</small><h3>${escapeHtml(warrant.subject)}</h3><p>${escapeHtml(warrant.charges)}</p><span>Requested by ${escapeHtml(warrant.requestingOfficer)} · Badge ${escapeHtml(warrant.badgeNumber)} · ${new Date(warrant.createdAt).toLocaleString()}</span><details><summary>View probable cause</summary><p>${escapeHtml(warrant.probableCause)}</p><b>Location: ${escapeHtml(warrant.location)}</b></details></div><div class="warrant-actions"><span class="status-tag ${warrant.status}">${escapeHtml(warrant.status)}</span>${actions}</div></article>`;
+  }).join('') : `<div class="empty-review"><b>No warrant requests</b><p>Use “File warrant” to send a request to command staff for review.</p></div>`;
+  setText('#warrants-pending', warrants.filter((item) => item.status === 'pending').length);
+  setText('#warrants-approved', warrants.filter((item) => item.status === 'approved').length);
+  setText('#warrants-denied', warrants.filter((item) => item.status === 'denied').length);
+  setText('#nav-warrant-count', warrants.filter((item) => item.status === 'pending').length);
+}
+
+function handleWarrantAction(event) {
+  const button = event.target.closest('[data-warrant-action]');
+  if (!button) return;
+  if (!isAdmin()) return showToast('Administrator clearance is required to authorize warrants', 'warning');
+  const warrants = readCollection(STORAGE.warrants);
+  const warrant = warrants.find((item) => item.id === button.dataset.id);
+  if (!warrant) return;
+  warrant.status = button.dataset.warrantAction;
+  warrant.reviewedAt = new Date().toISOString();
+  warrant.reviewedBy = readAdminProfile()?.username || 'Administrator';
+  writeCollection(STORAGE.warrants, warrants);
+  logActivity('Warrant reviewed', `${warrant.id} marked ${warrant.status}`);
+  renderWarrants();
+  showToast(`${warrant.id} marked ${warrant.status}`);
 }
 
 function renderDispatch() {
